@@ -35,3 +35,23 @@
 #score {
 
 }
+#cursorcapture {
+    background-color:transparent;
+    z-index:3;
+    width:50vw;
+    height:83vh;
+    margin-top:8.5vh;
+
+}
+.internet {
+    position:fixed;
+    z-index:4;
+    right:0;
+    bottom:0;
+    width:6vw;
+}
+
+#popup * { 
+    width:20vw;
+    margin-left:40vw;
+}
