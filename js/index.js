@@ -6,7 +6,12 @@ var popup = false;
 
 const config = {iceServers: [{urls: "stun:stun.1.google.com:19302"}]};
 const pc = new RTCPeerConnection(config);
-const dc = pc.createDataChannel("chat", {negotiated: true, id: 0});
+const dc = pc.createDataChannel("chat", { negotiated: true, id: 0 });
+
+const log = msg => textfield.value += msg;
+dc.onopen = () => chat.select();
+dc.onmessage = e => log(`> ${e.data}`);
+pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
 
 async function createOffer() {
   generate.disabled = true;
@@ -37,22 +42,22 @@ async function submit2() {
         document.execCommand("copy");
         alert("Answer copied, send to second player.");
         textfield.value = "";
-        textfield.placeholder = "You are done!";
+      textfield.placeholder = "";
+      
   };
+}
+
+function send() {
+  dc.send("faggot");
 }
 
 function submit3() {
   if (pc.signalingState != "have-local-offer") return;
   generate.disabled = submit.disabled = true;
   pc.setRemoteDescription({ type: "answer", sdp: textfield.value });
-  dc.send("faggot!");
+  textfield.value = "";
+  textfield.placeholder = "";
 }
-
-const log = msg => textfield.value += msg;
-dc.onmessage = e => log(`> ${e.data}`);
-pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
-
-
 
 
 /*
