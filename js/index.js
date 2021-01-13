@@ -1,87 +1,59 @@
 /*jshint esversion: 9 */
-function startup() {
-    
-}
-
-const generate = document.getElementById('generate');
+const generate = document.querySelector('#generate');
 const submit = document.getElementById('submit'); 
-const textfield = document.getElementById('input');
+const textfield = document.querySelector('#input');
+var popup = false;
 
 const config = {iceServers: [{urls: "stun:stun.1.google.com:19302"}]};
 const pc = new RTCPeerConnection(config);
 const dc = pc.createDataChannel("chat", {negotiated: true, id: 0});
-const log = msg => div.innerHTML += `<br>${msg}`;
-dc.onopen = () => chat.select();
-dc.onmessage = e => log(`> ${e.data}`);
-pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
-
-chat.onkeypress = function(e) {
-  if (e.keyCode != 13) return;
-  dc.send(chat.value);
-  log(chat.value);
-  chat.value = "";
-};
 
 async function createOffer() {
-  button.disabled = true;
+  generate.disabled = true;
   await pc.setLocalDescription(await pc.createOffer());
   pc.onicecandidate = ({candidate}) => {
     if (candidate) return;
-    offer.value = pc.localDescription.sdp;
-    offer.select();
-    answer.placeholder = "Paste answer here";
+    textfield.value = pc.localDescription.sdp;
+    textfield.select();
+    textfield.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    alert("Offer copied, send to second player.");
+      textfield.value = "";
+      textfield.placeholder = "Input Answer Here:";
   };
 }
 
-offer.onkeypress = async function(e) {
-  if (e.keyCode != 13 || pc.signalingState != "stable") return;
-  button.disabled = offer.disabled = true;
-  await pc.setRemoteDescription({type: "offer", sdp: offer.value});
-  await pc.setLocalDescription(await pc.createAnswer());
-  pc.onicecandidate = ({candidate}) => {
-    if (candidate) return;
-    answer.focus();
-    answer.value = pc.localDescription.sdp;
-    answer.select();
+async function submit2() {
+  submit3();
+    if (pc.signalingState != "stable") return;
+    generate.disabled = submit.disabled = true;
+    await pc.setRemoteDescription({type: "offer", sdp: textfield.value});
+    await pc.setLocalDescription(await pc.createAnswer());
+    pc.onicecandidate = ({candidate}) => {
+        if (candidate || generate.disabled ==  false) return;
+        textfield.value = pc.localDescription.sdp;
+        textfield.select();
+        textfield.setSelectionRange(0, 99999);
+        document.execCommand("copy");
+        alert("Answer copied, send to second player.");
+        textfield.value = "";
+        textfield.placeholder = "You are done!";
   };
-};
+}
 
-answer.onkeypress = function(e) {
-  if (e.keyCode != 13 || pc.signalingState != "have-local-offer") return;
-  answer.disabled = true;
-  pc.setRemoteDescription({type: "answer", sdp: answer.value});
-};
+function submit3() {
+  if (pc.signalingState != "have-local-offer") return;
+  generate.disabled = submit.disabled = true;
+  pc.setRemoteDescription({ type: "answer", sdp: textfield.value });
+  dc.send("faggot!");
+}
 
-ddEventListener('DOMContentLoaded', () => {
-    startup();
-});
-
-
-/*
-
-<button id="button" onclick="createOffer()">Offer:</button>
-<textarea id="offer" placeholder="Paste offer here"></textarea>
-Answer: <textarea id="answer"></textarea><br><div id="div"></div>
-Chat: <input id="chat"><br>
+const log = msg => textfield.value += msg;
+dc.onmessage = e => log(`> ${e.data}`);
+pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
 
 
 
-peer2.on('signal', data => {
-    // when peer2 has signaling data, give it to peer1 somehow
-    peer1.signal(data);
-});
-
-peer1.on('connect', () => {
-    // wait for 'connect' event before using the data channel
-    peer1.send('hey peer2, how is it going?');
-});
-
-peer2.on('data', data => {
-    // got a data channel message
-    console.log('got a message from peer1: ' + data);
-});
-
- */
 
 /*
 var slider = document.getElementById("myRange");
