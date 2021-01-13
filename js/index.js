@@ -10,17 +10,17 @@ const space = document.querySelector("#gamespace");
 
 var popup = false,
   delta = 0,
-  maxFPS = 60,
-  timestep = 1000 / 60,
   prev = 0,
-  speed = 0.018,
+  speed = 0.04,
   py = 0,
+  py2 = 0,
   ty = 0,
   bX = 1,
   bY = 0,
-  bAngle = 320,
-  bSpeed = 0.03,
-  maxBounce = 75;
+  bAngle = 330 ,
+  bSpeed = 0.045;
+  paused = true,
+  online = false;
 
 
 
@@ -29,11 +29,14 @@ const pc = new RTCPeerConnection(config);
 const dc = pc.createDataChannel("chat", { negotiated: true, id: 0 });
 
 function mainloop() {
-  deltatimer();
-  pmove();
-  bmove();
-  collision();
-
+    deltatimer();
+  if (!paused) {
+ 
+    pmove();
+    bmove();
+    collision();
+    bot();
+  }
   requestAnimationFrame(mainloop);
 }
 
@@ -57,6 +60,11 @@ function pmove() {
   } else if (py+0.5 < ty && py < 100) {
     py += speed * delta;
   }
+  if (py < 0) {
+    py = 0;
+  } else if (py > 100) {
+    py = 100;
+  }
   player.style.marginTop = py + "vh";
 }
 
@@ -73,31 +81,48 @@ function bmove() {
 function collision() {
   if (bY >= 47) {
     bAngle *= -1;
-    bY = 46.9;
+    bY = 46.8;
   } else if (bY <= -47) {
     bAngle *= -1;
-    bY = -46.9;
+    bY = -46.8;
   }
  
   //paddle collsion
   var paddel = py / 82.24200000000017 * 100 - 50;
-  if (bX <= -48 && bY <= paddel + 11.5 && bY >= paddel - 11.5) {
-    bAngle = -((paddel + 8.5 - bY + 3) / 8.5) * maxBounce;
-    bX = 47.9;
-  } else if (bX <= -48.7) {
+  if (bX <= -48 && bY <= paddel + 15.5 && bY >= paddel - 11.5) {
+    bAngle -= 45;
+    bX = -47.8;
+  } else if (bX <= -49) {
     bX = 0;
     bY = 0;
 
   }
 
-  if (bX >= 48 && bY <= paddel - 11.5 && bY >= paddel + 11.5) {
-    bAngle = ((paddel + 8.5 - bY + 3) / 8.5) * maxBounce;
-    bX = 47.9;
-  } else if (bX >= 48.7) {
+  var paddel2 = py2 / 82.24200000000017 * 100 - 50;
+  if (bX >= 48 && bY <= paddel2 + 15.5 && bY >= paddel2 - 11.5) {
+    bAngle += 45;
+    bX = 47.8;
+  } else if (bX >= 49) {
     bX = 0;
     bY = 0;
 
   }
+}
+
+//bot for singelplayer
+function bot() {
+  var Y = ((bY / 100) * 82.24200000000017) + 50;
+  if (py2-0.5 > Y && py2 > 0) {
+    py2 -= speed * delta;
+  } else if (py2+0.5 < Y && py2 < 100) {
+    py2 += speed * delta;
+  }
+  if (py2 > 100) {
+    py2 = 82.24200000000017;
+  } else if (py2 < 0) {
+    py2 = 0;
+  }
+  enemy.style.marginTop = py2 + "vh";
 }
   
 
@@ -106,6 +131,7 @@ function collision() {
 const log = e => receive(e);
 dc.onopen = function () {
   hide();
+  online = true;
 };
 dc.onmessage = e => log(e.data);
 
@@ -167,9 +193,11 @@ function recieve(e) {
 //Show/Hide P2P popup
 function hide() {
   if (document.querySelector("#popup").style.display == "none") {
+    paused = true;
     document.querySelector("#popup").style.display = "block";
   } else {
     document.querySelector("#popup").style.display = "none";
+    paused = false;
   }
 }
 
