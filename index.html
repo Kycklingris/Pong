@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pong</title>
     <link rel="stylesheet" href="index.css">
-    <script src="js/index.js"></script>
-    <script src="js/simplepeer.min.js"></script>
+
 </head>
 <body>
     <div id = "gamespace">
@@ -19,9 +18,14 @@
 <div id = "cursorcapture"></div>
 <a class = "internet" href = ""><img class = "internet" src="images/internet.png"></a>
 <div id = "popup">
-       <textarea id = "input" class = "textfield" name = "input" rows="4" cols="50"></textarea>
-    <button class = "button" id = "generate">Generate</button>
-    <button class = "button" id = "submit">Submit</button>
+       <textarea id = "input" class = "textfield"></textarea>
+    <button class = "button" onclick = "generate2()" id = "generate">Generate</button>
+    <button class = "button" onclick = "submit2()" id = "submit">Submit</button>
 </div>
+
+
+
+<script src="js/simplepeer.min.js"></script>
+<script src="js/index.js"></script>
 </body>
 </html>

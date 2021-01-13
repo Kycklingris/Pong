@@ -1,25 +1,36 @@
 /*jshint esversion: 9 */
 function startup() {
-    const generate = document.querySelector('generate');
-    const submit = document.querySelector('submit');
-    const textfield = document.querySelector('textfield');
-}
-
-function generate() {
-        var p1 = new SimplePeer({ initiator: true, trickle: false });
-        p1.on('signal', data => {
-            textfield.textContent = JSON.stringify(data);
-        });
-        
-}
-
-function submit() {
-
-}
     
+}
 
-generate.onclick = generate();
-submit.onclick = submit();
+const generate = document.getElementById('generate');
+const submit = document.getElementById('submit'); 
+const textfield = document.getElementById('input');
+var p = new SimplePeer({ initiator: false, trickle: false });
+
+p.on('error', err => console.log('error', err))
+
+function generate2() {
+    p = new SimplePeer({ initiator: true, trickle: false });
+    p.on('signal', data => {
+        textfield.textContent = JSON.stringify(data);
+    });
+    
+}
+
+function submit2() {
+    p = new SimplePeer({ initiator: false, trickle: false });
+    p.signal(JSON.parse(document.querySelector('#input').value));
+}
+
+p.on('connect', () => {
+    console.log('connect');
+    p.send('whatever' + Math.random());
+});
+
+p.on('data', data => {
+    console.log('data:' + data);
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     startup();
