@@ -50,8 +50,28 @@
     bottom:0;
     width:6vw;
 }
-
-#popup * { 
-    width:20vw;
-    margin-left:40vw;
+#popup {
+    z-index:3;
+    position:absolute;
+    width:25vw;
+    height:35vh;
+    margin-left:37.5vw;
+    margin-top:32.5vh;
+}
+.button {
+    border-style:none;
+    bottom:0;
+    width:12.5vw;
+    height:5vh;
+    background-color:red;
+}
+#submit {
+    background-color:blue;
+    right:0;
+}
+#input {
+    resize:none;
+    border-style:none;
+    width:25vw;
+    height:30vh;
 }
