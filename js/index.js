@@ -6,28 +6,38 @@ const ball = document.querySelector("#ball");
 const region = document.querySelector("#cursorcapture");
 const player = document.querySelector("#playerl");
 const enemy = document.querySelector("#playerr");
+const space = document.querySelector("#gamespace");
 
-var popup = false;
+var popup = false,
+  delta = 0,
+  maxFPS = 60,
+  timestep = 1000 / 60,
+  prev = 0;
 
 const config = {iceServers: [{urls: "stun:stun.1.google.com:19302"}]};
 const pc = new RTCPeerConnection(config);
 const dc = pc.createDataChannel("chat", { negotiated: true, id: 0 });
 
+function mainloop() {
 
-function mainloop(timestamp) {
 
 }
 
-function update() {
-
+function deltatimer() {
+  let e = Date.now();
+  delta = e - prev;
+  prev = e;
+  console.log(delta);
 }
 
-  
-
-
-
+region.onmousemove = function cursor(e) {
+  var y = e.clientY;
+  var ty = y / space.clientHeight;
+  ty = ty * 100 - 8.5;
+};
 
 function pmove() {
+  
 
 }
 
@@ -76,7 +86,8 @@ function pmove() {
   }
 
   function recieve(e) {
-    alert(e);
+    console.log(e);
+
   }
 
   function hide() {
@@ -94,38 +105,3 @@ function pmove() {
     textfield.value = "";
     textfield.placeholder = "";
 }
-
-
-/*
-var slider = document.getElementById("myRange");
-        var output = document.getElementById("zoomerimg");
-        var mapboundries = document.getElementById("wowmap")
-        var zoomerimg = document.getElementById("zoomerimg")
-        var zoomer = document.getElementById("zoomer")
-        document.onmousemove = function(e) {
-            var x = e.clientX;
-            var y = e.clientY;
-            zoomer.style.marginLeft = x + "px"
-            zoomer.style.marginTop = y + "px"
-            y = y  + window.scrollY - mapboundries.offsetTop;
-            var translatex = x / mapboundries.clientWidth;
-            var translatey = y / mapboundries.clientHeight;
-
-            var translatex = translatex * zoomerimg.clientWidth-150
-            var translatey = translatey * zoomerimg.clientHeight-150
-            zoomerimg.style.transform = 'translateX(-' + translatex + 'px)'
-            zoomerimg.style.transform += 'translateY(-' + translatey + 'px)'
-
-        }
-        function mappress() {
-            if (zoomer.style.display == "inline") {
-                zoomer.style.display = "none"
-            } else {
-                zoomer.style.display = "inline"
-            }
-        }
-        slider.oninput = function() {
-            output.style.width = this.value*100 + "%";
-        }
-
-        */
