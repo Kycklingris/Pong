@@ -15,12 +15,13 @@ var popup = false,
   py = 0,
   py2 = 0,
   ty = 0,
+  ty2 = 0,
   bX = 1,
   bY = 0,
   bAngle = 330 ,
-  bSpeed = 0.045;
+  bSpeed = 0.045,
   paused = true,
-  online = false;
+  onlineplay = false;
 
 
 
@@ -31,12 +32,21 @@ const dc = pc.createDataChannel("chat", { negotiated: true, id: 0 });
 function mainloop() {
     deltatimer();
   if (!paused) {
- 
-    pmove();
-    bmove();
-    collision();
-    bot();
+    if (!onlineplay) {
+      pmove();
+      bmove();
+      collision();
+      bot();
+    }
+    if (onlineplay) {
+      pmove();
+      bmove();
+      collision();
+      online();
+    }
+
   }
+
   requestAnimationFrame(mainloop);
 }
 
@@ -51,6 +61,10 @@ region.onmousemove = function cursor(e) {
   var y = e.clientY;
    ty = y / space.clientHeight;
   ty = ty * 100 - 8.5;
+  if (onlineplay) {
+    dc.send("pong: " + ty);
+  }
+  
 };
 
 // Player Movement
@@ -124,17 +138,39 @@ function bot() {
   }
   enemy.style.marginTop = py2 + "vh";
 }
-  
 
+function online() {
+    if (py2-0.5 > ty2 && py2 > 0) {
+        py2 -= speed * delta;
+      } else if (py2+0.5 < ty2 && py2 < 100) {
+        py2 += speed * delta;
+      }
+    if (py2 < 0) {
+        py2 = 0;
+      } else if (py2 > 100) {
+        py2 = 100;
+      }
+  enemy.style.marginTop = py2 + "vh";
+}
+
+// WebRTC recieved data
+dc.addEventListener('message', e => {
+  if (e.data.includes("pong: ")) {
+    var tmp = e.data.split(" ");
+    ty2 = 100 - tmp[1];
+  } else if (e.data.includes("ball: ")) {
+    var tmp2 = e.data.split(" ");
+
+  }
+});
 
 // Dont ask
-const log = e => receive(e);
+var log = e => console.log(e);
 dc.onopen = function () {
   hide();
-  online = true;
+  onlineplay = true;
 };
 dc.onmessage = e => log(e.data);
-
 pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
 // Ok, ask again
 
@@ -184,11 +220,8 @@ function submit3() {
 }
 
 
-// WebRTC recieved data
-function recieve(e) {
-  console.log(e);
 
-}
+
 
 //Show/Hide P2P popup
 function hide() {
