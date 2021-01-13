@@ -18,8 +18,9 @@ var popup = false,
   ty = 0,
   bX = 1,
   bY = 0,
-  bAngle = 75,
-  bSpeed = 0.18;
+  bAngle = 320,
+  bSpeed = 0.03,
+  maxBounce = 75;
 
 
 
@@ -41,7 +42,6 @@ function deltatimer() {
   let e = Date.now();
   delta = e - prev;
   prev = e;
-  console.log(delta);
 }
 
 region.onmousemove = function cursor(e) {
@@ -63,21 +63,43 @@ function pmove() {
 // Ball Movement
 function bmove() {
   var angle = AngleToRadians(bAngle);
-  bX += bSpeed * Math.cos(angle);
-  bY += bSpeed * -Math.sin(angle);
+  bX += bSpeed * Math.cos(angle) * delta;
+  bY += bSpeed * -Math.sin(angle) * delta;
   ball.style.marginTop = bY + "vh";
   ball.style.marginLeft = bX + "vw";
 }
 
+// Collision...
 function collision() {
-  if (bY >= 46.7 || bY <= -46.7) {
-    bAngle = -bAngle;
+  if (bY >= 47) {
+    bAngle *= -1;
+    bY = 46.9;
+  } else if (bY <= -47) {
+    bAngle *= -1;
+    bY = -46.9;
+  }
+ 
+  //paddle collsion
+  var paddel = py / 82.24200000000017 * 100 - 50;
+  if (bX <= -48 && bY <= paddel + 11.5 && bY >= paddel - 11.5) {
+    bAngle = -((paddel + 8.5 - bY + 3) / 8.5) * maxBounce;
+    bX = 47.9;
+  } else if (bX <= -48.7) {
+    bX = 0;
+    bY = 0;
+
+  }
+
+  if (bX >= 48 && bY <= paddel - 11.5 && bY >= paddel + 11.5) {
+    bAngle = ((paddel + 8.5 - bY + 3) / 8.5) * maxBounce;
+    bX = 47.9;
   } else if (bX >= 48.7) {
-    bAngle = bAngle +45;
-  } else if(bX <= -48.7) {
-    bAngle = -45;
+    bX = 0;
+    bY = 0;
+
   }
 }
+  
 
 
 // Dont ask
