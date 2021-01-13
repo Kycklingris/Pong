@@ -51,6 +51,7 @@
     width:6vw;
 }
 #popup {
+    display:none;
     z-index:3;
     position:absolute;
     width:25vw;
