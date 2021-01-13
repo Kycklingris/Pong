@@ -3,17 +3,23 @@
     padding:0;
     position:absolute;
 }
+body {
+    overflow:hidden;
+}
 #gamespace{
     background-color:rgb(22, 22, 22);
     width:100vw;
     height:100vh;
 }
 #divider {
-     text-align:center;
+    position:absolute;
+    left:50vw;
+    top:50vh;
+    transform:translate(-50%, -50%);
+
      background-color: white;
      width:0.1vw;
      height:100vh;
-     margin-left:49.95vw;
 }
 
 .player {
@@ -26,14 +32,22 @@
 }
 
 #ball {
-    width:4vh;
-    height:4vh;
+    position:absolute;
+    left:50vw;
+    top:50vh;
+    transform:translate(-50%, -50%);
+
+    width:6vh;
+    height:6vh;
     background-color:rgb(80, 16, 16);
     z-index:2;
+    border-radius:3vh;
+    margin-left:0;
+    margin-top:0;
 }
 
 #score {
-
+    color:white;
 }
 #cursorcapture {
     background-color:transparent;
