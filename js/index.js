@@ -12,32 +12,44 @@ var popup = false,
   delta = 0,
   maxFPS = 60,
   timestep = 1000 / 60,
-  prev = 0;
+  prev = 0,
+  speed = 0.016,
+  py = 0,
+  ty = 0;
+  
 
 const config = {iceServers: [{urls: "stun:stun.1.google.com:19302"}]};
 const pc = new RTCPeerConnection(config);
 const dc = pc.createDataChannel("chat", { negotiated: true, id: 0 });
 
 function mainloop() {
-
-
+  deltatimer();
+  pmove();
+  requestAnimationFrame(mainloop);
 }
 
 function deltatimer() {
   let e = Date.now();
   delta = e - prev;
   prev = e;
-  console.log(delta);
 }
 
 region.onmousemove = function cursor(e) {
   var y = e.clientY;
-  var ty = y / space.clientHeight;
+   ty = y / space.clientHeight;
   ty = ty * 100 - 8.5;
 };
 
 function pmove() {
-  
+  if (py-0.5 > ty) {
+    py -= speed * delta;
+  } else if (py+0.5 < ty) {
+    py += speed * delta;
+  }
+  player.style.marginTop = py + "vh";
+}
+
+function bmove() {
 
 }
 
@@ -98,10 +110,11 @@ function pmove() {
     }
   };
 
-  function submit3() {
-    if (pc.signalingState != "have-local-offer") return;
-    generate.disabled = submit.disabled = true;
-    pc.setRemoteDescription({ type: "answer", sdp: textfield.value });
-    textfield.value = "";
-    textfield.placeholder = "";
-}
+function submit3() {
+  if (pc.signalingState != "have-local-offer") return;
+  generate.disabled = submit.disabled = true;
+  pc.setRemoteDescription({ type: "answer", sdp: textfield.value });
+  textfield.value = "";
+  textfield.placeholder = "";
+};
+mainloop();
