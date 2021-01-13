@@ -20,7 +20,7 @@ function generate2() {
 
 function submit2() {
     p = new SimplePeer({ initiator: false, trickle: false });
-    p.signal(JSON.parse(document.querySelector('#input').value));
+    p.signal(JSON.parse(document.querySelector('#input').textContent));
 }
 
 p.on('connect', () => {
