@@ -1,27 +1,32 @@
 /*jshint esversion: 9 */
-
 function startup() {
-    var ip = document.getElementById("ip");
-    var Peer = require('simple-peer');  
-
+    const generate = document.querySelector('generate');
+    const submit = document.querySelector('submit');
+    const textfield = document.querySelector('textfield');
 }
 
-class Signaling {
-    startup() {
+function generate() {
+        var p1 = new SimplePeer({ initiator: true, trickle: false });
+        p1.on('signal', data => {
+            textfield.textContent = JSON.stringify(data);
+        });
+        
+}
 
-    }
+function submit() {
+
+}
     
-}
 
+generate.onclick = generate();
+submit.onclick = submit();
 
-var peer1 = new Peer({ initiator: true });
-var peer2 = new Peer();
-
-peer1.on('signal', data => {
-    // when peer1 has signaling data, give it to peer2 somehow
-    peer2.signal(data);
+document.addEventListener('DOMContentLoaded', () => {
+    startup();
 });
 
+
+/*
 peer2.on('signal', data => {
     // when peer2 has signaling data, give it to peer1 somehow
     peer1.signal(data);
@@ -37,12 +42,7 @@ peer2.on('data', data => {
     console.log('got a message from peer1: ' + data);
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    startup();
-    Signaling.startup();
-});
-
- 
+ */
 
 /*
 var slider = document.getElementById("myRange");
