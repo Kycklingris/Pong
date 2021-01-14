@@ -12,18 +12,17 @@ body {
     height:100vh;
 }
 #divider {
-    position:absolute;
     left:50vw;
     top:50vh;
     transform:translate(-50%, -50%);
 
-     background-color: white;
+     background-color: rgb(106, 106, 106);
      width:0.1vw;
-     height:100vh;
+     height:97vh;
 }
 
 .player {
-    background-color:white;
+    background-color:rgb(255, 251, 251);
     width:0.5vw;
     height:17vh;
 }
@@ -32,7 +31,6 @@ body {
 }
 
 #ball {
-    position:absolute;
     left:50vw;
     top:50vh;
     transform:translate(-50%, -50%);
@@ -67,7 +65,6 @@ body {
 #popup {
     display:none;
     z-index:3;
-    position:absolute;
     width:25vw;
     height:35vh;
     margin-left:37.5vw;
@@ -89,4 +86,15 @@ body {
     border-style:none;
     width:25vw;
     height:30vh;
+}
+
+#start {
+    display:none;
+    left:50vw;
+    top:50vh;
+    transform:translate(-50%, -50%);
+    z-index:5;
+    width:10vw;
+    height:10vh;
+    background-color: red;
 }

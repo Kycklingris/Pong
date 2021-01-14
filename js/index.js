@@ -7,6 +7,7 @@ const region = document.querySelector("#cursorcapture");
 const player = document.querySelector("#playerl");
 const enemy = document.querySelector("#playerr");
 const space = document.querySelector("#gamespace");
+const startButton = document.querySelector("#start");
 
 var popup = false,
   delta = 0,
@@ -18,10 +19,11 @@ var popup = false,
   ty2 = 0,
   bX = 1,
   bY = 0,
-  bAngle = 330 ,
-  bSpeed = 0.045,
+  bAngle = 330,
+  bSpeed = 0.0045,
   paused = true,
-  onlineplay = false;
+  onlineplay = false,
+  host = false;
 
 
 
@@ -39,10 +41,10 @@ function mainloop() {
       bot();
     }
     if (onlineplay) {
-      pmove();
-      bmove();
-      collision();
       online();
+      pmove();
+      collision();
+      bmove();
     }
 
   }
@@ -61,10 +63,7 @@ region.onmousemove = function cursor(e) {
   var y = e.clientY;
    ty = y / space.clientHeight;
   ty = ty * 100 - 8.5;
-  if (onlineplay) {
-    dc.send("pong: " + ty);
-  }
-  
+
 };
 
 // Player Movement
@@ -80,6 +79,9 @@ function pmove() {
     py = 100;
   }
   player.style.marginTop = py + "vh";
+  if (onlineplay) {
+    dc.send("pong: " + py);
+  }
 }
 
 // Ball Movement
@@ -96,9 +98,15 @@ function collision() {
   if (bY >= 47) {
     bAngle *= -1;
     bY = 46.8;
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
   } else if (bY <= -47) {
     bAngle *= -1;
     bY = -46.8;
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
   }
  
   //paddle collsion
@@ -106,20 +114,31 @@ function collision() {
   if (bX <= -48 && bY <= paddel + 15.5 && bY >= paddel - 11.5) {
     bAngle -= 45;
     bX = -47.8;
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
   } else if (bX <= -49) {
     bX = 0;
     bY = 0;
-
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
   }
 
   var paddel2 = py2 / 82.24200000000017 * 100 - 50;
   if (bX >= 48 && bY <= paddel2 + 15.5 && bY >= paddel2 - 11.5) {
     bAngle += 45;
     bX = 47.8;
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
   } else if (bX >= 49) {
+    
     bX = 0;
     bY = 0;
-
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
   }
 }
 
@@ -140,26 +159,38 @@ function bot() {
 }
 
 function online() {
-    if (py2-0.5 > ty2 && py2 > 0) {
-        py2 -= speed * delta;
-      } else if (py2+0.5 < ty2 && py2 < 100) {
-        py2 += speed * delta;
-      }
-    if (py2 < 0) {
-        py2 = 0;
-      } else if (py2 > 100) {
-        py2 = 100;
-      }
   enemy.style.marginTop = py2 + "vh";
+}
+
+//Choosing host
+function start() {
+  dc.send("start");
+  host = true;
+  hide();
+  onlineplay = true;
+}
+
+function start2() {
+  host = false;
+  bAngle -= 180;
+  hide();
+  onlineplay = true;
+  
 }
 
 // WebRTC recieved data
 dc.addEventListener('message', e => {
   if (e.data.includes("pong: ")) {
     var tmp = e.data.split(" ");
-    ty2 = 100 - tmp[1];
-  } else if (e.data.includes("ball: ")) {
+    py2 = 83 - tmp[1];
+  } else if (e.data.includes("boll: ")) {
     var tmp2 = e.data.split(" ");
+    bAngle = tmp2[1] - 180 ;
+    bX = 0 - tmp2[2];
+    bY = 0 - tmp2[3];
+
+  } else if (e.data.includes("start")) {
+    start2();
 
   }
 });
@@ -167,8 +198,7 @@ dc.addEventListener('message', e => {
 // Dont ask
 var log = e => console.log(e);
 dc.onopen = function () {
-  hide();
-  onlineplay = true;
+  startButton.style.display = "block";
 };
 dc.onmessage = e => log(e.data);
 pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
@@ -232,6 +262,7 @@ function hide() {
     document.querySelector("#popup").style.display = "none";
     paused = false;
   }
+  startButton.style.display = "none";
 }
 
 function AngleToRadians(angle) {
