@@ -12,9 +12,18 @@ const score1 = document.querySelector("#score1");
 const score2 = document.querySelector("#score2");
 const messagefield = document.querySelector("#msg");
 const messages = document.querySelector("#messages");
-const wiper = document.querySelector("#wiper");
 const sliders = document.querySelectorAll(".slider");
 const values = document.querySelectorAll(".value");
+const cookiequest = document.querySelector("#cookies");
+
+const circle = document.querySelector("#circle");
+const smokel = document.querySelector("#smokel");
+const smoker = document.querySelector("#smoker");
+const dustl = document.querySelector("#dustl");
+const dustr = document.querySelector("#dustr");
+
+
+var settings = [0.045, 6, 75, 17, 0.04, 5];
 
 var popup = true,
   delta = 0,
@@ -37,7 +46,9 @@ var popup = true,
   p2 = 0,
   bounce = false,
   prevbSpeed = 0,
-  cookies = false;
+  cookies = false,
+  pausTime = false,
+  pausTimeout = null;
 
 
 var pc = null;
@@ -131,21 +142,17 @@ function collision() {
   if (bX <= -48 && bY >= py - 52 && bY <= py + 15 && !bounce) {
     bAngle += 180 - ((bY - py + 50 - 8.5) / 75 * 360);
     bX = -47.8;
-    timer();
+    bouncer();
     bounce = true;
     
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
   } else if (bX <= -49) {
-    bX = 0;
-    bY = 0;
+    reset();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
       score("p1");
-    } else if (!onlineplay) {
-      p2++;
-      score2.innerHTML = p2;
     }
   }
 
@@ -153,21 +160,16 @@ function collision() {
   if (bX >= 48 && bY >= py2 - 52 && bY <= py2 + 15 && !bounce) {
     bAngle += 180 - ((bY - py2 + 50 - 8.5) / 75 * 360);
     bX = 47.5;
-    timer();
+    bouncer();
     bounce = true;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
   } else if (bX >= 50) {
-    
-    bX = 0;
-    bY = 0;
+    reset();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
       score();
-    } else if (!onlineplay) {
-      p1++;
-      score1.innerHTML = p1; 
     }
 
     }
@@ -293,39 +295,6 @@ function join() {
   data();
 }
 
-function data() {
-  dc.on('data', function (e) {
-    if (e.includes("pong: ")) {
-      var tmp = e.split(" ");
-      py2 = 83 - Number(tmp[1]);
-    } else if (e.includes("boll: ")) {
-      var tmp2 = e.split(" ");
-      bAngle = Number(tmp2[1]) - 180;
-      bX = 0 - Number(tmp2[2]);
-      bY = 0 - Number(tmp2[3]);
-
-    } else if (e.includes("scorem")) {
-      score("p1");
-
-    } else if (e.includes("scoreu")) {
-      score();
-
-    } else if (e.includes("paus")) {
-      paus();
-    } else if (e.includes("Other: ")) {
-      var msg = document.createElement("p");
-      var text = document.createTextNode(e);
-      msg.appendChild(text);
-      messages.appendChild(msg);
-      messages.scrollTo(0, document.body.scrollHeight);
-    } else if (e.includes("start")) {
-      start2();
-
-    }
-  });
-  
-}
-
 function send() {
   if (messagefield.value != "") {
     if (onlineplay) {
@@ -361,6 +330,40 @@ function start2() {
   
 }
 
+function data() {
+  dc.on('data', function (e) {
+    if (e.includes("pong: ")) {
+      var tmp = e.split(" ");
+      py2 = 83 - Number(tmp[1]);
+    } else if (e.includes("boll: ")) {
+      var tmp2 = e.split(" ");
+      bAngle = Number(tmp2[1]) - 180;
+      bX = 0 - Number(tmp2[2]);
+      bY = 0 - Number(tmp2[3]);
+
+    } else if (e.includes("scorem")) {
+      score("p1");
+
+    } else if (e.includes("scoreu")) {
+      score();
+
+    } else if (e.includes("paus")) {
+      paus();
+    } else if (e.includes("Other: ")) {
+      var msg = document.createElement("p");
+      var text = document.createTextNode(e);
+      msg.appendChild(text);
+      messages.appendChild(msg);
+      messages.scrollTo(0, document.body.scrollHeight);
+    } else if (e.includes("start")) {
+      start2();
+
+    }
+  });
+  
+}
+
+
 
 
 //Show/Hide P2P popup
@@ -369,9 +372,11 @@ function hide() {
     if (document.querySelector("#popup").style.display == "none") {
       document.querySelector("#popup").style.display = "block";
       document.querySelector("#settings").style.display = "block";
+      document.querySelector("#wiper").style.display = "block";
     } else {
       document.querySelector("#popup").style.display = "none";
       document.querySelector("#settings").style.display = "none";
+      document.querySelector("#wiper").style.display = "none";
     }
     startButton.style.display = "none";
   }
@@ -382,25 +387,32 @@ function AngleToRadians(angle) {
   return angle / 180* Math.PI;
 }
 
-function timer() {
+function bouncer() {
   setTimeout(function(){ 
     bounce = false;
     }, 750);
 }
 
-
 function paus() {
-  if (host) {
-    dc.send("paus");
-  } else {
-  hide();
-  }
-  paused = !paused;
-  if (paused) {
-    wiper.style.display = "block";
-  } else {
-    wiper.style.display = "none";
-  }
+  if (!pausTime) {
+    pausTime = true;
+    if (host) {
+      dc.send("paus");
+    } else {
+      hide();
+    }
+  
+    if (!paused) {
+      paused = true;
+      pausTime = false;
+    } else {
+      pausTimeout = setTimeout(function () {
+        paused = false;
+        pausTime = false;
+      }, 1000);
+    
+    }
+  } 
 
 }
 
@@ -423,68 +435,95 @@ function score(x) {
 }
 
 function save() {
-  bSpeed = sliders[0].value;
-  bSize = sliders[1].value;
-  bAngle = sliders[2].value;
-  pSize = sliders[3].value;
-  speed = sliders[4].value;
-  win = sliders[5].value;
-
+  settings[0] = Number((sliders[0].value - 100)/100 * 0.045);
+  settings[1] = Number((sliders[1].value - 100)/100 * 6);
+  settings[2] = Number((sliders[2].value - 100)/100 * 75);
+  settings[3] = Number((sliders[3].value - 100)/100 * 17);
+  settings[4] = Number((sliders[4].value - 100)/100 * 0.04);
+  settings[5] = Number(sliders[5].value);
   if (host) {
     dc.send("set: " + bSpeed + " " + bSize + " " + bAngle + " " + pSize + " " + speed + " " + win);
   }
   if (cookies) {
-    
-  } else {
-
+    saveCookie();
+    console.log(document.cookie);
   }
-
+  fullReset();
 }
 
 function askCookie() {
+  cookiequest.style.display = "none";
+  cookies = true;
+  saveCookie();
+}
+
+function saveCookie() {
+
+  var date = new Date();
+  date.setTime(date.getTime() + 12960000000);
+  var expires = "expires="+ date.toUTCString();
+  for (var l = 1; l < 7; l++) {
+    document.cookie = String(l) + "=" + String(settings[l-1]) + ";" + expires + ";path=/";
+  }
+}
+
+function load() {
   
 }
 
 function reset() {
   bX = 0;
   bY = 0;
-  bAngle = 0;
+  bSpeed = 0;
+  var x = setInterval(circleAni, 5);
+ 
+  setTimeout(function(){ 
+    bSpeed = settings[0];
+    clearInterval(x);
+    }, 1500);
 
+}
+
+function circleAni() {
+
+}
+
+function fullReset() {
+  p1 = 0;
+  p2 = 0;
+  load();
+  reset();
 }
 
 function resetVal(x) {
   if (x < 6) {
-    sliders[x - 1].value = 0; 
+    sliders[x - 1].value = 200;
+    values[x-1].innerHTML = sliders[x-1].value -200; 
   } else {
     sliders[x - 1].value = 5;
+    values[x - 1].innerHTML = sliders[x - 1].value; 
   }
-  values[x-1].innerHTML = sliders[x-1].value;
+  
 }
 
 sliders[0].oninput = function () {
-  values[0].innerHTML = sliders[0].value;
+  values[0].innerHTML = sliders[0].value -200;
 };
-
 sliders[1].oninput = function () {
-  values[1].innerHTML = sliders[1].value;
+  values[1].innerHTML = sliders[1].value -200;
 };
-
 sliders[2].oninput = function () {
-  values[2].innerHTML = sliders[2].value;
+  values[2].innerHTML = sliders[2].value -200;
 };
-
 sliders[3].oninput = function () {
-  values[3].innerHTML = sliders[3].value;
+  values[3].innerHTML = sliders[3].value -200;
 };
-
 sliders[4].oninput = function () {
-  values[4].innerHTML = sliders[4].value;
+  values[4].innerHTML = sliders[4].value -200;
 };
-
 sliders[4].oninput = function () {
-  values[4].innerHTML = sliders[4].value;
+  values[4].innerHTML = sliders[4].value -200;
 };
-
 sliders[5].oninput = function () {
   values[5].innerHTML = sliders[5].value;
 };
@@ -500,6 +539,12 @@ messagefield.addEventListener("keyup", function(event) {
     document.querySelector("#msgbutt").click();
   }
 });
+document.addEventListener("keyup", function(event) {
+  if (event.keyCode === 27) {
+    event.preventDefault();
+    paus();
+  }
+});
 
 space.addEventListener("click", function (event) {
   paus();
@@ -513,21 +558,44 @@ wiper.addEventListener("click", function (event) {
 
 
 function initialize() {
-  var x = document.cookie;
-  if (x.length != "") {
-    var x2 = x.split(";");
+  console.log(document.cookie);
+  if (document.cookie != "") {
+    cookies = true;
+    var x2 = document.cookie.split("; ");
     for (var i = 0; i < x2.length; i++) {
-
+      var x3 = x2[i].split("=");
+      var i2 = x3[0]-1;
+      settings[i2] = Number(x3[1]);
+      if (i2 == 5) {
+        sliders[5].value = x3[1];
+        values[5].innerHTML = sliders[5].value;
+      } else if (i2 == 4) { 
+        sliders[4].value =  x3[1] / 0.04 * 100  + 100;
+        values[4].innerHTML = sliders[4].value-200;
+      } else if (i2 == 3) {
+        sliders[3].value = x3[1] / 17 * 100 + 100;
+        values[3].innerHTML = sliders[3].value-200;
+      } else if (i2 == 2) {
+        sliders[2].value = x3[1] / 75 * 100 + 100;
+        values[2].innerHTML = sliders[2].value-200;
+      } else if (i2 == 1) {
+        sliders[1].value = x3[1] / 6 * 100 + 100;
+        values[1].innerHTML = sliders[1].value-200;
+      } else if (i2 == 0) {
+        sliders[0].value = x3[1] / 0.045 * 100 + 100;
+        values[0].innerHTML = sliders[0].value-200;
+      }
     }
-
+    load();
   } else {
     cookies = false;
+    cookiequest.style.display = "block";
   }
 
+  initializeRTC();
+  mainloop();
 }
 
 
 //Start mainloop
 initialize();
-initializeRTC();
-mainloop();

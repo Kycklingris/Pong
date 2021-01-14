@@ -59,7 +59,7 @@ body {
     width:6vh;
     height:6vh;
     background-color:rgba(255, 255, 255, 0.076);
-    z-index:2;
+    z-index:3;
     border-radius:3vh;
     margin-left:0;
     margin-top:0;
@@ -104,7 +104,7 @@ body {
 
 #popup {
     display:block;
-    z-index:3;
+    z-index:5;
     width:25vw;
     height:15vh;
     margin-left:37.5vw;
@@ -224,14 +224,14 @@ body {
     width:100%;
 }
 #send {
-    z-index:3;
+    z-index:5;
     display:flex;
     top:97vh;
     height:3vh;
     left:82.25vw;
 }
 #send * {
-    z-index:3;
+    z-index:5;
     position:relative;
 }
 #msg {
@@ -256,7 +256,7 @@ body {
 
 }
 #messages * {
-    z-index:3;
+    z-index:5;
     position: relative;
     color:rgba(255, 255, 255, 0.563);
     overflow-wrap: break-word;
@@ -271,5 +271,46 @@ body {
     width:100vw;
     height:100vh;
     background-color: rgba(0, 0, 0, 0.857);
-    z-index:3;
+    z-index:4;
+}
+
+
+
+
+#cookies {
+    display:none;
+    z-index:10;
+    top:97vh;
+    height:3vh;
+    width:82vw;
+    background-color: rgba(255, 255, 255, 0.611);
+    text-align:center;
+    font-size: 2.3vh;
+}
+#cookies button {
+    position: relative;
+    height:3vh;
+    width:10vw;
+    background-color:green;
+    float:right;
+}
+
+
+
+
+
+#circle {
+    display:none;
+    left:50vw;
+    top:50vh;
+    transform:translate(-50%, -50%);
+
+    z-index:2;
+    width:5px;
+    height:5px;
+    background-color: transparent;
+    border:1.7vw solid white;
+    border-radius: 50%;
+    -moz-border-radius:50%;
+    -webkit-border-radius:50%;
 }
