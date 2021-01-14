@@ -130,6 +130,8 @@ function collision() {
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
       dc.send("scorem");
+      p2++;
+      score2.innerHTML = p2;
     } else if (!onlineplay) {
       p2++;
       score2.innerHTML = p2;
@@ -150,6 +152,8 @@ function collision() {
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
       dc.send("scoreu");
+      p1++;
+      score1.innerHTML = p1; 
     } else if (!onlineplay) {
       p1++;
       score1.innerHTML = p1; 
@@ -208,12 +212,14 @@ dc.addEventListener('message', e => {
 
   } else if (e.data.includes("scorem")) {
       p1++;
-      score2.innerHTML = p1;
+      score1.innerHTML = p1;
 
   } else if (e.data.includes("scoreu")) {
       p2++;
       score2.innerHTML = p2;
 
+  } else if (e.data.includes("paus")) {
+    paused = !paused;
   } else if (e.data.includes("start")) {
     start2();
 
@@ -291,19 +297,39 @@ function submit3() {
 
 //Show/Hide P2P popup
 function hide() {
-  if (document.querySelector("#popup").style.display == "none") {
-    paused = true;
-    document.querySelector("#popup").style.display = "block";
-  } else {
-    document.querySelector("#popup").style.display = "none";
-    paused = false;
+  if (!onlineplay) {
+    if (document.querySelector("#popup").style.display == "none") {
+      paused = true;
+      document.querySelector("#popup").style.display = "block";
+    } else {
+      document.querySelector("#popup").style.display = "none";
+      paused = false;
+    }
+    startButton.style.display = "none";
   }
-  startButton.style.display = "none";
 }
 
 function AngleToRadians(angle) {
   return angle / 180* Math.PI;
 }
+
+space.addEventListener("click", function (event) {
+
+  if (!onlineplay) {
+    hide();
+  } else if (host) {
+    dc.send("paus");
+    paused = !paused;
+  }
+});
+region.addEventListener("click", function (event) {
+  if (!onlineplay) {
+    hide();
+  } else if (host) {
+    dc.send("paus");
+    paused = !paused;
+  }
+});
 
 //Start mainloop
 mainloop();
