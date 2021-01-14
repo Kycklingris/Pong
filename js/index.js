@@ -8,6 +8,8 @@ const player = document.querySelector("#playerl");
 const enemy = document.querySelector("#playerr");
 const space = document.querySelector("#gamespace");
 const startButton = document.querySelector("#start");
+const score1 = document.querySelector("#score1");
+const score2 = document.querySelector("#score2");
 
 var popup = false,
   delta = 0,
@@ -20,10 +22,12 @@ var popup = false,
   bX = 1,
   bY = 0,
   bAngle = 330,
-  bSpeed = 0.0045,
+  bSpeed = 0.045,
   paused = true,
   onlineplay = false,
-  host = false;
+  host = false,
+  p1 = 0,
+  p2 = 0;
 
 
 
@@ -45,6 +49,9 @@ function mainloop() {
       pmove();
       collision();
       bmove();
+      if (host) {
+        setInterval(dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY), 400);
+      }
     }
 
   }
@@ -122,6 +129,10 @@ function collision() {
     bY = 0;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      dc.send("scorem");
+    } else if (!onlineplay) {
+      p2++;
+      score2.innerHTML = p2;
     }
   }
 
@@ -138,9 +149,15 @@ function collision() {
     bY = 0;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      dc.send("scoreu");
+    } else if (!onlineplay) {
+      p1++;
+      score1.innerHTML = p1; 
+    }
+
     }
   }
-}
+
 
 //bot for singelplayer
 function bot() {
@@ -189,6 +206,14 @@ dc.addEventListener('message', e => {
     bX = 0 - tmp2[2];
     bY = 0 - tmp2[3];
 
+  } else if (e.data.includes("scorem")) {
+      p1++;
+      score2.innerHTML = p1;
+
+  } else if (e.data.includes("scoreu")) {
+      p2++;
+      score2.innerHTML = p2;
+
   } else if (e.data.includes("start")) {
     start2();
 
@@ -197,12 +222,23 @@ dc.addEventListener('message', e => {
 
 // Dont ask
 var log = e => console.log(e);
-dc.onopen = function () {
-  startButton.style.display = "block";
-};
 dc.onmessage = e => log(e.data);
-pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
-// Ok, ask again
+pc.onconnectionstatechange = function (event) {
+  switch (pc.connectionState) {
+    case "connected":
+      startButton.style.display = "block";
+      break;
+    case "disconnected":
+    case "failed":
+      generate.disabled = submit.disabled = false;
+      alert("connection failed!");
+      break;
+    case "closed":
+      generate.disabled = submit.disabled = false;
+      alert("connection closed!");
+      break;
+  }
+};
 
 // Creating WebRTC offer
 async function createOffer() {

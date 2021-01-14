@@ -37,15 +37,30 @@ body {
 
     width:6vh;
     height:6vh;
-    background-color:rgb(80, 16, 16);
+    background-color:rgba(255, 255, 255, 0.076);
     z-index:2;
     border-radius:3vh;
     margin-left:0;
     margin-top:0;
+    box-shadow: 2px 2px 2px black;
 }
 
 #score {
-    color:white;
+    left:50vw;
+    top:0;
+    transform:translate(-50%, -50%);
+    width:10vw;
+    height:14vh;
+    display:flex;
+    justify-content: space-between;
+}
+#score * {
+    position:relative;
+    color:rgba(255, 255, 255, 0.57);
+    text-decoration: solid;
+    bottom:-6vh;
+    z-index: 2;
+    font-size:14vh;
 }
 #cursorcapture {
     background-color:transparent;
@@ -75,10 +90,10 @@ body {
     bottom:0;
     width:12.5vw;
     height:5vh;
-    background-color:red;
+    background-color:rgb(165, 62, 62);
 }
 #submit {
-    background-color:blue;
+    background-color:rgb(63, 63, 141);
     right:0;
 }
 #input {
@@ -96,5 +111,9 @@ body {
     z-index:5;
     width:10vw;
     height:10vh;
-    background-color: red;
+    background-color: rgb(157, 2, 2);
+}
+
+#gurka {
+    width:100%;
 }
