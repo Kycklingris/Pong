@@ -112,8 +112,44 @@ body {
     width:10vw;
     height:10vh;
     background-color: rgb(157, 2, 2);
+    border-radius:1vh;
+    box-shadow: 5px 5px 5px black;
 }
 
 #gurka {
     width:100%;
+}
+#send {
+    display:flex;
+    top:97vh;
+    height:3vh;
+    left:82.25vw;
+}
+#send * {
+    position:relative;
+}
+#messages {
+    background-color: transparent;
+    top:80.7vh;
+    height:16vh;
+    left: 82.25vw;
+    width:22.2vh;
+    overflow:hidden;
+    display:flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+
+}
+#messages * {
+    position: relative;
+    color:rgba(255, 255, 255, 0.563);
+    bottom:0;
+    overflow-wrap: break-word;
+    margin-bottom:5px;
+
+
+}
+#messages:first-child {
+    margin-top:100vh;
 }

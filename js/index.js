@@ -10,6 +10,8 @@ const space = document.querySelector("#gamespace");
 const startButton = document.querySelector("#start");
 const score1 = document.querySelector("#score1");
 const score2 = document.querySelector("#score2");
+const messagefield = document.querySelector("#msg");
+const messages = document.querySelector("#messages");
 
 var popup = false,
   delta = 0,
@@ -220,6 +222,12 @@ dc.addEventListener('message', e => {
 
   } else if (e.data.includes("paus")) {
     paused = !paused;
+  } else if (e.data.includes("Other: ")) {
+    var msg = document.createElement("p");
+    var text = document.createTextNode(e.data);
+    msg.appendChild(text)
+    messages.appendChild(msg);
+    messages.scrollTo(0, document.body.scrollHeight);
   } else if (e.data.includes("start")) {
     start2();
 
@@ -311,6 +319,19 @@ function hide() {
 
 function AngleToRadians(angle) {
   return angle / 180* Math.PI;
+}
+
+function send() {
+  if (onlineplay) {
+    dc.send("Other: " + messagefield.value);
+  }
+  var msg = document.createElement("p");
+  var text = document.createTextNode("You: " + messagefield.value);
+  msg.appendChild(text)
+  messages.appendChild(msg);
+  messages.scrollTo(0, document.body.scrollHeight);
+  messagefield.value = "";
+
 }
 
 space.addEventListener("click", function (event) {
