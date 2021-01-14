@@ -153,5 +153,5 @@ body {
 
 }
 #messages:first-child {
-    margin-top:100vh;
+    padding-top:100vh;
 }

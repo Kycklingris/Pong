@@ -32,11 +32,16 @@ var popup = false,
   p2 = 0;
 
 
+var pc = null;
+var dc = null;
+var lastpeerid = null;
 
+
+/*
 const config = { iceServers: [{ urls: "stun:stun.1.google.com:19302" }] };
 const pc = new RTCPeerConnection(config);
 const dc = pc.createDataChannel("chat", { negotiated: true, id: 0 });
-
+*/
 function mainloop() {
     deltatimer();
   if (!paused) {
@@ -202,105 +207,121 @@ function start2() {
 }
 
 // WebRTC recieved data
-dc.addEventListener('message', e => {
-  if (e.data.includes("pong: ")) {
-    var tmp = e.data.split(" ");
-    py2 = 83 - tmp[1];
-  } else if (e.data.includes("boll: ")) {
-    var tmp2 = e.data.split(" ");
-    bAngle = tmp2[1] - 180 ;
-    bX = 0 - tmp2[2];
-    bY = 0 - tmp2[3];
 
-  } else if (e.data.includes("scorem")) {
+function initializeRTC() {
+  pc = new Peer(null, {
+    debug: 2
+  });
+
+  pc.on('open', function (id) {
+    if (pc.id === null) {
+      console.log('Recieved null id from peer open');
+      pc.id = lastpeerid;
+    } else {
+      lastpeerid = pc.id;
+    }
+    console.log('ID: ' + pc.id);
+  });
+
+  pc.on('connection', function (c) {
+      // Allow only a single connection
+      if (dc && dc.open) {
+          c.on('open', function() {
+              c.send("Already connected to another client");
+              setTimeout(function() { c.close(); }, 500);
+          });
+          return;
+      }
+
+      dc = c;
+      console.log("Connected to: " + dc.peer);
+    alert("connected");
+    startButton.style.display = "block";
+    data();
+  });
+
+  pc.on("disconnected", function () {
+    paused = true;
+    alert("Connection lost. Please Reconnect");
+    console.log('Connection lost. Please Reconnect');
+
+    pc.id = lastpeerid;
+    pc._lastServerId = lastpeerid;
+    pc.reconnect();
+
+  });
+
+  pc.on("error", function (err) {
+    console.log(err);
+    alert('' + err);
+  });
+
+}
+
+function getId() {
+  textfield.value = pc.id;
+  textfield.select();
+  textfield.setSelectionRange(0, 99999);
+  document.execCommand("copy");
+}
+
+function join() {
+
+  if (dc) {
+    dc.close();
+  }
+
+  dc = pc.connect(textfield.value, {
+    reliable: true
+  });
+
+  dc.on('open', function () {
+    alert("Connected");      
+    startButton.style.display = "block";
+  });
+
+
+  dc.on('close', function () {
+    alert("Connection closed");
+  });
+  
+  data();
+}
+
+function data() {
+  dc.on('data', function (e) {
+    if (e.includes("pong: ")) {
+      var tmp = e.split(" ");
+      py2 = 83 - tmp[1];
+    } else if (e.includes("boll: ")) {
+      var tmp2 = e.split(" ");
+      bAngle = tmp2[1] - 180;
+      bX = 0 - tmp2[2];
+      bY = 0 - tmp2[3];
+
+    } else if (e.includes("scorem")) {
       p1++;
       score1.innerHTML = p1;
 
-  } else if (e.data.includes("scoreu")) {
+    } else if (e.includes("scoreu")) {
       p2++;
       score2.innerHTML = p2;
 
-  } else if (e.data.includes("paus")) {
-    paused = !paused;
-  } else if (e.data.includes("Other: ")) {
-    var msg = document.createElement("p");
-    var text = document.createTextNode(e.data);
-    msg.appendChild(text)
-    messages.appendChild(msg);
-    messages.scrollTo(0, document.body.scrollHeight);
-  } else if (e.data.includes("start")) {
-    start2();
+    } else if (e.includes("paus")) {
+      paused = !paused;
+    } else if (e.includes("Other: ")) {
+      var msg = document.createElement("p");
+      var text = document.createTextNode(e);
+      msg.appendChild(text);
+      messages.appendChild(msg);
+      messages.scrollTo(0, document.body.scrollHeight);
+    } else if (e.includes("start")) {
+      start2();
 
-  }
-});
-
-// Dont ask
-var log = e => console.log(e);
-dc.onmessage = e => log(e.data);
-pc.onconnectionstatechange = function (event) {
-  switch (pc.connectionState) {
-    case "connected":
-      startButton.style.display = "block";
-      break;
-    case "disconnected":
-    case "failed":
-      generate.disabled = submit.disabled = false;
-      alert("connection failed!");
-      break;
-    case "closed":
-      generate.disabled = submit.disabled = false;
-      alert("connection closed!");
-      break;
-  }
-};
-
-// Creating WebRTC offer
-async function createOffer() {
-  generate.disabled = true;
-  await pc.setLocalDescription(await pc.createOffer());
-  pc.onicecandidate = ({ candidate }) => {
-    if (candidate) return;
-    textfield.value = pc.localDescription.sdp;
-    textfield.select();
-    textfield.setSelectionRange(0, 99999);
-    document.execCommand("copy");
-    alert("Offer copied, send to second player.");
-    textfield.value = "";
-    textfield.placeholder = "Input Answer Here:";
-  };
+    }
+  });
+  
 }
-
-// Accepting WebRTC offer
-async function submit2() {
-  submit3();
-  if (pc.signalingState != "stable") return;
-  generate.disabled = submit.disabled = true;
-  await pc.setRemoteDescription({ type: "offer", sdp: textfield.value });
-  await pc.setLocalDescription(await pc.createAnswer());
-  pc.onicecandidate = ({ candidate }) => {
-    if (candidate || generate.disabled == false) return;
-    textfield.value = pc.localDescription.sdp;
-    textfield.select();
-    textfield.setSelectionRange(0, 99999);
-    document.execCommand("copy");
-    alert("Answer copied, send to second player.");
-    textfield.value = "";
-    textfield.placeholder = "";
-    
-  };
-}
-
-// Accepting return offer
-function submit3() {
-  if (pc.signalingState != "have-local-offer") return;
-  generate.disabled = submit.disabled = true;
-  pc.setRemoteDescription({ type: "answer", sdp: textfield.value });
-  textfield.value = "";
-  textfield.placeholder = "";
-}
-
-
-
 
 
 //Show/Hide P2P popup
@@ -315,6 +336,7 @@ function hide() {
     }
     startButton.style.display = "none";
   }
+
 }
 
 function AngleToRadians(angle) {
@@ -354,3 +376,4 @@ region.addEventListener("click", function (event) {
 
 //Start mainloop
 mainloop();
+initializeRTC();
