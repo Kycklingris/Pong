@@ -8,6 +8,7 @@
     <link rel="icon" href="images/icon.png">
 </head>
 <body>
+    <div id = "wiper"></div>
     <div id = "gamespace">
     <div id = "playerl" class = "player"></div>
     <div id = "divider"></div>
@@ -22,13 +23,15 @@
 <div id = "messages"></div>
 <div id = "send">
     <input id = "msg" type = "text">
-    <button onclick = "send()">Send</button>
+    <button id = "msgbutt" onclick = "send()">Send</button>
 </div>
-<button class = "internet" onclick = "hide()"><img class = "internet" src="images/internet.png"></button>
 <div id = "popup">
-    <textarea id = "input" placeholder="Input Offer Here:" class = "textfield"></textarea>
-    <button class = "button" id = "generate" onclick = "getId()">Generate Offer</button>
-    <button class = "button" id = "submit" onclick = "join()">Submit</button>
+    <textarea id = "input" class = "textfield"></textarea>
+    <button class = "button" id = "generate" onclick = "getId()">Get ID</button>
+    <button class = "button" id = "submit" onclick = "join()">Join</button>
+</div>
+<div id = "settings">
+
 </div>
 
 <button id = "start" onclick = "start()">Start</button>

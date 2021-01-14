@@ -12,37 +12,36 @@ const score1 = document.querySelector("#score1");
 const score2 = document.querySelector("#score2");
 const messagefield = document.querySelector("#msg");
 const messages = document.querySelector("#messages");
+const wiper = document.querySelector("#wiper");
 
-var popup = false,
+var popup = true,
   delta = 0,
   prev = 0,
   speed = 0.04,
-  py = 0,
-  py2 = 0,
+  py = 41.121,
+  py2 = 41.121,
   ty = 0,
   ty2 = 0,
   bX = 1,
   bY = 0,
-  bAngle = 330,
+  bAngle = -180,
   bSpeed = 0.045,
   paused = true,
   onlineplay = false,
   host = false,
   p1 = 0,
-  p2 = 0;
+  p2 = 0,
+  bounce = false,
+  prevbSpeed = 0;
 
 
 var pc = null;
 var dc = null;
 var lastpeerid = null;
 
-
-/*
-const config = { iceServers: [{ urls: "stun:stun.1.google.com:19302" }] };
-const pc = new RTCPeerConnection(config);
-const dc = pc.createDataChannel("chat", { negotiated: true, id: 0 });
-*/
 function mainloop() {
+
+
     deltatimer();
   if (!paused) {
     if (!onlineplay) {
@@ -123,11 +122,13 @@ function collision() {
     }
   }
  
-  //paddle collsion
-  var paddel = py / 82.24200000000017 * 100 - 50;
-  if (bX <= -48 && bY <= paddel + 15.5 && bY >= paddel - 11.5) {
-    bAngle -= 45;
+  //paddle left collsion
+  if (bX <= -48 && bY >= py - 52 && bY <= py + 15 && !bounce) {
+    bAngle += 180 - ((bY - py + 50 - 8.5) / 75 * 360);
     bX = -47.8;
+    timer();
+    bounce = true;
+    
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
@@ -136,31 +137,29 @@ function collision() {
     bY = 0;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-      dc.send("scorem");
-      p2++;
-      score2.innerHTML = p2;
+      score("p1");
     } else if (!onlineplay) {
       p2++;
       score2.innerHTML = p2;
     }
   }
 
-  var paddel2 = py2 / 82.24200000000017 * 100 - 50;
-  if (bX >= 48 && bY <= paddel2 + 15.5 && bY >= paddel2 - 11.5) {
-    bAngle += 45;
-    bX = 47.8;
+  //paddle right collision
+  if (bX >= 48 && bY >= py2 - 52 && bY <= py2 + 15 && !bounce) {
+    bAngle += 180 - ((bY - py2 + 50 - 8.5) / 75 * 360);
+    bX = 47.5;
+    timer();
+    bounce = true;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
-  } else if (bX >= 49) {
+  } else if (bX >= 50) {
     
     bX = 0;
     bY = 0;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-      dc.send("scoreu");
-      p1++;
-      score1.innerHTML = p1; 
+      score();
     } else if (!onlineplay) {
       p1++;
       score1.innerHTML = p1; 
@@ -172,7 +171,7 @@ function collision() {
 
 //bot for singelplayer
 function bot() {
-  var Y = ((bY / 100) * 82.24200000000017) + 50;
+  var Y = bY + 50 - 8.5;
   if (py2-0.5 > Y && py2 > 0) {
     py2 -= speed * delta;
   } else if (py2+0.5 < Y && py2 < 100) {
@@ -207,7 +206,7 @@ function start2() {
 }
 
 
-//Peerjs start
+//Peerjs start, lite med peerjs är kopierat, följde typ bara quick start, lite svårt att säga exakt vad dock.
 function initializeRTC() {
   pc = new Peer(null, {
     debug: 2
@@ -261,9 +260,14 @@ function initializeRTC() {
 
   pc.on("error", function (err) {
     console.log(err);
-    alert('' + err);
+    var msg = document.createElement("p");
+      var text = document.createTextNode("" + err);
+      msg.appendChild(text);
+      messages.appendChild(msg);
+      messages.scrollTo(0, document.body.scrollHeight);
   });
 
+  getId();
 }
 
 function getId() {
@@ -307,23 +311,21 @@ function data() {
   dc.on('data', function (e) {
     if (e.includes("pong: ")) {
       var tmp = e.split(" ");
-      py2 = 83 - tmp[1];
+      py2 = 83 - Number(tmp[1]);
     } else if (e.includes("boll: ")) {
       var tmp2 = e.split(" ");
-      bAngle = tmp2[1] - 180;
-      bX = 0 - tmp2[2];
-      bY = 0 - tmp2[3];
+      bAngle = Number(tmp2[1]) - 180;
+      bX = 0 - Number(tmp2[2]);
+      bY = 0 - Number(tmp2[3]);
 
     } else if (e.includes("scorem")) {
-      p1++;
-      score1.innerHTML = p1;
+      score("p1");
 
     } else if (e.includes("scoreu")) {
-      p2++;
-      score2.innerHTML = p2;
+      score();
 
     } else if (e.includes("paus")) {
-      paused = !paused;
+      paus();
     } else if (e.includes("Other: ")) {
       var msg = document.createElement("p");
       var text = document.createTextNode(e);
@@ -338,16 +340,31 @@ function data() {
   
 }
 
+function score(x) {
+  if (x == "p1") {
+    p1++;
+    score1.innerHTML = p1;
+
+    if (host) {
+      dc.send("scorem");
+    }
+  } else {
+    p2++;
+    score2.innerHTML = p2;
+    if (host) {
+      dc.send("scorem");
+    }
+  }
+}
+
 
 //Show/Hide P2P popup
 function hide() {
   if (!onlineplay) {
     if (document.querySelector("#popup").style.display == "none") {
-      paused = true;
       document.querySelector("#popup").style.display = "block";
     } else {
       document.querySelector("#popup").style.display = "none";
-      paused = false;
     }
     startButton.style.display = "none";
   }
@@ -358,35 +375,60 @@ function AngleToRadians(angle) {
   return angle / 180* Math.PI;
 }
 
-function send() {
-  if (onlineplay) {
-    dc.send("Other: " + messagefield.value);
+function timer() {
+  setTimeout(function(){ 
+        bounce = false; 
+    }, 750);
+}
+
+function paus() {
+  if (host) {
+    dc.send("paus");
+  } else {
+  hide();
   }
-  var msg = document.createElement("p");
-  var text = document.createTextNode("You: " + messagefield.value);
-  msg.appendChild(text)
-  messages.appendChild(msg);
-  messages.scrollTo(0, document.body.scrollHeight);
-  messagefield.value = "";
+  paused = !paused;
+  if (paused) {
+    wiper.style.display = "block";
+  } else {
+    wiper.style.display = "none";
+  }
 
 }
 
-space.addEventListener("click", function (event) {
+function send() {
+  if (messagefield.value != "") {
+    if (onlineplay) {
+      dc.send("Other: " + messagefield.value);
+    }
+    var msg = document.createElement("p");
+    var text = document.createTextNode("You: " + messagefield.value);
+    msg.appendChild(text);
+    messages.appendChild(msg);
+    messages.scrollTo(0, document.body.scrollHeight);
+    messagefield.value = "";
+  }
+}
 
-  if (!onlineplay) {
-    hide();
-  } else if (host) {
-    dc.send("paus");
-    paused = !paused;
+//copied
+messagefield.addEventListener("keyup", function(event) {
+  // Number 13 is the "Enter" key on the keyboard
+  if (event.keyCode === 13) {
+    // Cancel the default action, if needed
+    event.preventDefault();
+    // Trigger the button element with a click
+    document.querySelector("#msgbutt").click();
   }
 });
+
+space.addEventListener("click", function (event) {
+  paus();
+});
 region.addEventListener("click", function (event) {
-  if (!onlineplay) {
-    hide();
-  } else if (host) {
-    dc.send("paus");
-    paused = !paused;
-  }
+  paus();
+});
+wiper.addEventListener("click", function (event) {
+  paus();
 });
 
 //Start mainloop
