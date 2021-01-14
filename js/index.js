@@ -13,6 +13,8 @@ const score2 = document.querySelector("#score2");
 const messagefield = document.querySelector("#msg");
 const messages = document.querySelector("#messages");
 const wiper = document.querySelector("#wiper");
+const sliders = document.querySelectorAll(".slider");
+const values = document.querySelectorAll(".value");
 
 var popup = true,
   delta = 0,
@@ -26,13 +28,16 @@ var popup = true,
   bY = 0,
   bAngle = -180,
   bSpeed = 0.045,
+  bSize = 6,
+  win = 5,
   paused = true,
   onlineplay = false,
   host = false,
   p1 = 0,
   p2 = 0,
   bounce = false,
-  prevbSpeed = 0;
+  prevbSpeed = 0,
+  cookies = false;
 
 
 var pc = null;
@@ -185,25 +190,6 @@ function bot() {
   enemy.style.marginTop = py2 + "vh";
 }
 
-function online() {
-  enemy.style.marginTop = py2 + "vh";
-}
-
-//Choosing host
-function start() {
-  dc.send("start");
-  host = true;
-  hide();
-  onlineplay = true;
-}
-
-function start2() {
-  host = false;
-  bAngle -= 180;
-  hide();
-  onlineplay = true;
-  
-}
 
 
 //Peerjs start, lite med peerjs är kopierat, följde typ bara quick start, lite svårt att säga exakt vad dock.
@@ -340,6 +326,85 @@ function data() {
   
 }
 
+function send() {
+  if (messagefield.value != "") {
+    if (onlineplay) {
+      dc.send("Other: " + messagefield.value);
+    }
+    var msg = document.createElement("p");
+    var text = document.createTextNode("You: " + messagefield.value);
+    msg.appendChild(text);
+    messages.appendChild(msg);
+    messages.scrollTo(0, document.body.scrollHeight);
+    messagefield.value = "";
+  }
+}
+
+
+function online() {
+  enemy.style.marginTop = py2 + "vh";
+}
+
+//Choosing host
+function start() {
+  dc.send("start");
+  host = true;
+  hide();
+  onlineplay = true;
+}
+
+function start2() {
+  host = false;
+  bAngle -= 180;
+  hide();
+  onlineplay = true;
+  
+}
+
+
+
+//Show/Hide P2P popup
+function hide() {
+  if (!onlineplay) {
+    if (document.querySelector("#popup").style.display == "none") {
+      document.querySelector("#popup").style.display = "block";
+      document.querySelector("#settings").style.display = "block";
+    } else {
+      document.querySelector("#popup").style.display = "none";
+      document.querySelector("#settings").style.display = "none";
+    }
+    startButton.style.display = "none";
+  }
+
+}
+
+function AngleToRadians(angle) {
+  return angle / 180* Math.PI;
+}
+
+function timer() {
+  setTimeout(function(){ 
+    bounce = false;
+    }, 750);
+}
+
+
+function paus() {
+  if (host) {
+    dc.send("paus");
+  } else {
+  hide();
+  }
+  paused = !paused;
+  if (paused) {
+    wiper.style.display = "block";
+  } else {
+    wiper.style.display = "none";
+  }
+
+}
+
+
 function score(x) {
   if (x == "p1") {
     p1++;
@@ -357,58 +422,73 @@ function score(x) {
   }
 }
 
+function save() {
+  bSpeed = sliders[0].value;
+  bSize = sliders[1].value;
+  bAngle = sliders[2].value;
+  pSize = sliders[3].value;
+  speed = sliders[4].value;
+  win = sliders[5].value;
 
-//Show/Hide P2P popup
-function hide() {
-  if (!onlineplay) {
-    if (document.querySelector("#popup").style.display == "none") {
-      document.querySelector("#popup").style.display = "block";
-    } else {
-      document.querySelector("#popup").style.display = "none";
-    }
-    startButton.style.display = "none";
-  }
-
-}
-
-function AngleToRadians(angle) {
-  return angle / 180* Math.PI;
-}
-
-function timer() {
-  setTimeout(function(){ 
-        bounce = false; 
-    }, 750);
-}
-
-function paus() {
   if (host) {
-    dc.send("paus");
-  } else {
-  hide();
+    dc.send("set: " + bSpeed + " " + bSize + " " + bAngle + " " + pSize + " " + speed + " " + win);
   }
-  paused = !paused;
-  if (paused) {
-    wiper.style.display = "block";
+  if (cookies) {
+    
   } else {
-    wiper.style.display = "none";
+
   }
 
 }
 
-function send() {
-  if (messagefield.value != "") {
-    if (onlineplay) {
-      dc.send("Other: " + messagefield.value);
-    }
-    var msg = document.createElement("p");
-    var text = document.createTextNode("You: " + messagefield.value);
-    msg.appendChild(text);
-    messages.appendChild(msg);
-    messages.scrollTo(0, document.body.scrollHeight);
-    messagefield.value = "";
-  }
+function askCookie() {
+  
 }
+
+function reset() {
+  bX = 0;
+  bY = 0;
+  bAngle = 0;
+
+}
+
+function resetVal(x) {
+  if (x < 6) {
+    sliders[x - 1].value = 0; 
+  } else {
+    sliders[x - 1].value = 5;
+  }
+  values[x-1].innerHTML = sliders[x-1].value;
+}
+
+sliders[0].oninput = function () {
+  values[0].innerHTML = sliders[0].value;
+};
+
+sliders[1].oninput = function () {
+  values[1].innerHTML = sliders[1].value;
+};
+
+sliders[2].oninput = function () {
+  values[2].innerHTML = sliders[2].value;
+};
+
+sliders[3].oninput = function () {
+  values[3].innerHTML = sliders[3].value;
+};
+
+sliders[4].oninput = function () {
+  values[4].innerHTML = sliders[4].value;
+};
+
+sliders[4].oninput = function () {
+  values[4].innerHTML = sliders[4].value;
+};
+
+sliders[5].oninput = function () {
+  values[5].innerHTML = sliders[5].value;
+};
+
 
 //copied
 messagefield.addEventListener("keyup", function(event) {
@@ -431,6 +511,23 @@ wiper.addEventListener("click", function (event) {
   paus();
 });
 
+
+function initialize() {
+  var x = document.cookie;
+  if (x.length != "") {
+    var x2 = x.split(";");
+    for (var i = 0; i < x2.length; i++) {
+
+    }
+
+  } else {
+    cookies = false;
+  }
+
+}
+
+
 //Start mainloop
-mainloop();
+initialize();
 initializeRTC();
+mainloop();

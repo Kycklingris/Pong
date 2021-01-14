@@ -31,7 +31,32 @@
     <button class = "button" id = "submit" onclick = "join()">Join</button>
 </div>
 <div id = "settings">
+    <div id = "sliders">
+    <p class = "slideName">Ball speed</p>
+    <input type= "range" min="-200" max = "200" value = "0" class = "slider" id = "bSpeed">
+    <button class = "value" id = "bSpeedVal" onclick = "resetVal(1)">0</button>
 
+    <p class = "slideName">Ball size</p>
+    <input type= "range" min="-200" max = "200" value = "0" class = "slider" id = "bSize">
+    <button class = "value" id = "bSizeVal" onclick = "resetVal(2)">0</button>
+
+    <p class = "slideName">Max angle</p>
+    <input type= "range" min="-200" max = "200" value = "0" class = "slider" id = "bMax">
+    <button class = "value" id = "bMaxVal" onclick = "resetVal(3)">0</button>
+
+    <p class = "slideName">Player size</p>
+    <input type= "range" min="-200" max = "200" value = "0" class = "slider" id = "pSize">
+    <button class = "value" id = "pSizeVal" onclick = "resetVal(4)">0</button>
+
+    <p class = "slideName">Player speed</p>
+    <input type= "range" min="-200" max = "200" value = "0" class = "slider" id = "pSpeed">
+    <button class = "value" id = "pSpeedVal" onclick = "resetVal(5)">0</button>
+
+    <p class = "slideName">Win number</p>
+    <input type= "range" min="0" max = "30" value = "5" class = "slider" id = "win">
+    <button class = "value" id = "winVal" onclick = "resetVal(6)">5</button>
+    </div>
+    <button id = "setbutt" onlick = "save()">Save</button>
 </div>
 
 <button id = "start" onclick = "start()">Start</button>
