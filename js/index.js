@@ -206,8 +206,8 @@ function start2() {
   
 }
 
-// WebRTC recieved data
 
+//Peerjs start
 function initializeRTC() {
   pc = new Peer(null, {
     debug: 2
@@ -235,14 +235,22 @@ function initializeRTC() {
 
       dc = c;
       console.log("Connected to: " + dc.peer);
-    alert("connected");
+    var msg = document.createElement("p");
+      var text = document.createTextNode("Connected");
+      msg.appendChild(text);
+      messages.appendChild(msg);
+      messages.scrollTo(0, document.body.scrollHeight);
     startButton.style.display = "block";
     data();
   });
 
   pc.on("disconnected", function () {
     paused = true;
-    alert("Connection lost. Please Reconnect");
+    var msg = document.createElement("p");
+      var text = document.createTextNode("Connection lost. Please reconnect");
+      msg.appendChild(text);
+      messages.appendChild(msg);
+      messages.scrollTo(0, document.body.scrollHeight);
     console.log('Connection lost. Please Reconnect');
 
     pc.id = lastpeerid;
@@ -276,13 +284,20 @@ function join() {
   });
 
   dc.on('open', function () {
-    alert("Connected");      
+    var msg = document.createElement("p");
+      var text = document.createTextNode("Connected");
+      msg.appendChild(text);
+      messages.appendChild(msg);
+      messages.scrollTo(0, document.body.scrollHeight);     
     startButton.style.display = "block";
   });
 
-
   dc.on('close', function () {
-    alert("Connection closed");
+    var msg = document.createElement("p");
+      var text = document.createTextNode("Connection closed!");
+      msg.appendChild(text);
+      messages.appendChild(msg);
+      messages.scrollTo(0, document.body.scrollHeight);
   });
   
   data();
