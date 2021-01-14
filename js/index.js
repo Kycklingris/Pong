@@ -15,6 +15,7 @@ const messages = document.querySelector("#messages");
 const sliders = document.querySelectorAll(".slider");
 const values = document.querySelectorAll(".value");
 const cookiequest = document.querySelector("#cookies");
+const gurka = document.querySelector("#gurka");
 
 const circle = document.querySelector("#circle");
 const smokel = document.querySelector("#smokel");
@@ -48,7 +49,8 @@ var popup = true,
   prevbSpeed = 0,
   cookies = false,
   pausTime = false,
-  pausTimeout = null;
+  pausTimeout = null,
+  maxAngle = null;
 
 
 var pc = null;
@@ -97,9 +99,9 @@ region.onmousemove = function cursor(e) {
 
 // Player Movement
 function pmove() {
-  if (py-0.5 > ty && py > 0) {
+  if (py-2 > ty && py > 0) {
     py -= speed * delta;
-  } else if (py+0.5 < ty && py < 100) {
+  } else if (py+2 < ty && py < 100) {
     py += speed * delta;
   }
   if (py < 0) {
@@ -120,36 +122,39 @@ function bmove() {
   bY += bSpeed * -Math.sin(angle) * delta;
   ball.style.marginTop = bY + "vh";
   ball.style.marginLeft = bX + "vw";
+  gurka.style.transform = "rotate(" +  bAngle + "deg)";
+  gurka.style.transition = "all 1.5s";
 }
 
 // Collision...
 function collision() {
-  if (bY >= 47) {
+  if (bY >= 48 - bSize/4) {
     bAngle *= -1;
-    bY = 46.8;
+    bY = 47- bSize/4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
-  } else if (bY <= -47) {
+  } else if (bY <= -48 + bSize/4) {
     bAngle *= -1;
-    bY = -46.8;
+    bY = -47 + bSize/4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
   }
  
   //paddle left collsion
-  if (bX <= -48 && bY >= py - 52 && bY <= py + 15 && !bounce) {
+  if (bX <= -49.5 + (bSize/4) && bY >= py - 50 && bY <= py + pSize && !bounce) {
     bAngle += 180 - ((bY - py + 50 - 8.5) / 75 * 360);
-    bX = -47.8;
+    bX = -49 + bSize/4;
     bouncer();
     bounce = true;
     
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
-  } else if (bX <= -49) {
+  } else if (bX <= -55 - bSize/2) {
     reset();
+    score("p1");
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
       score("p1");
@@ -157,16 +162,17 @@ function collision() {
   }
 
   //paddle right collision
-  if (bX >= 48 && bY >= py2 - 52 && bY <= py2 + 15 && !bounce) {
+  if (bX >= 49.5 - (bSize/4) && bY >= py2 - 50&& bY <= py2 + pSize&& !bounce) {
     bAngle += 180 - ((bY - py2 + 50 - 8.5) / 75 * 360);
-    bX = 47.5;
+    bX = 49 - bSize/4;
     bouncer();
     bounce = true;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
-  } else if (bX >= 50) {
+  } else if (bX >= 55 - bSize/2) {
     reset();
+    score();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
       score();
@@ -446,7 +452,6 @@ function save() {
   }
   if (cookies) {
     saveCookie();
-    console.log(document.cookie);
   }
   fullReset();
 }
@@ -468,7 +473,17 @@ function saveCookie() {
 }
 
 function load() {
-  
+  bSpeed = settings[0];
+  bSize = settings[1];
+  maxAngle = settings[2];
+  pSize = settings[3];
+  speed = settings[4];
+  win = settings[5];
+  player.style.height = pSize + "vh";
+  enemy.style.height = pSize + "vh";
+
+  ball.style.height = bSize + "vh";
+  ball.style.width = bSize + "vh";
 }
 
 function reset() {
@@ -485,12 +500,18 @@ function reset() {
 }
 
 function circleAni() {
-
+  circle.style.display = "block";
+  circle.style.width = "10vh";
+  circle.style.height = "10vh";
 }
 
 function fullReset() {
   p1 = 0;
   p2 = 0;
+  score1.innerHTML = p1;
+  score2.innerHTML = p2;
+
+  bAngle = Math.random(0, 360);
   load();
   reset();
 }
