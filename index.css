@@ -307,11 +307,44 @@ body {
     transform:translate(-50%, -50%);
 
     z-index:2;
-    width:0.1vh;
-    height:0.1vh;
+    width:0.001vh;
+    height:0.001vh;
     background-color: transparent;
-    border:1.7vw solid white;
+
+
+    box-shadow: 0 0 0 0 black, 0 0 0 0 white;
+    padding:0;
+    opacity: 0;
+    animation: dot-anim linear 1.5s infinite;
     border-radius: 50%;
-    -moz-border-radius:50%;
-    -webkit-border-radius:50%;
 }
+@keyframes dot-anim {
+    20%{
+        box-shadow: 0 0 0 0 white, 0 0 5vh 1 white;
+    }
+  45% {
+    opacity: 1;
+    padding:0;
+  }
+  46% {
+    box-shadow: 0 0 0 0 white, 0 0 5vh 2vh white;
+    padding:3vh;
+  }
+  50% {
+    box-shadow: 0 0 0 0 white, 0 0 0vh 2.5vh white;
+  }
+  52% {
+    box-shadow: 0 0 0 0 white, 0 0 5vh 3vh white;
+  }
+  55% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 white, 0 0 7vh 4vh white;
+    padding:7vh;
+  }
+  81% {
+    opacity: 0;
+    box-shadow: 0 0 0 10vh white, 0 0 10vh 5vh white;
+    padding:7vh;
+  }
+}
+

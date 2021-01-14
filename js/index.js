@@ -490,20 +490,26 @@ function reset() {
   bX = 0;
   bY = 0;
   bSpeed = 0;
-  var x = setInterval(circleAni, 5);
+  circleAni(true);
  
   setTimeout(function(){ 
     bSpeed = settings[0];
-    clearInterval(x);
+    
+    circleAni(false);
     }, 1500);
 
 }
 
-function circleAni() {
-  circle.style.display = "block";
-  circle.style.width = "10vh";
-  circle.style.height = "10vh";
+function circleAni(x) {
+  if (x) {
+    circle.style.display = "block";
+    circle.style.webkitAnimationPlayState = "running";
+  } else {
+    circle.style.display = "none";
+    circle.style.webkitAnimationPlayState = "paused";
+  }
 }
+
 
 function fullReset() {
   p1 = 0;
