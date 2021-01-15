@@ -26,6 +26,8 @@ const dustr = document.querySelector("#dustr");
 
 var settings = [0.045, 6, 75, 17, 0.04, 5];
 
+var collisionWorker = new Worker('js/collision.js');
+
 var popup = true,
   delta = 0,
   prev = 0,
@@ -45,7 +47,6 @@ var popup = true,
   host = false,
   p1 = 0,
   p2 = 0,
-  bounce = false,
   prevbSpeed = 0,
   cookies = false,
   pausTime = false,
@@ -126,60 +127,7 @@ function bmove() {
   gurka.style.transition = "all 1.5s";
 }
 
-// Collision...
-function collision() {
-  if (bY >= 48 - bSize/4) {
-    bAngle *= -1;
-    bY = 47- bSize/4;
-    if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-    }
-  } else if (bY <= -48 + bSize/4) {
-    bAngle *= -1;
-    bY = -47 + bSize/4;
-    if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-    }
-  }
- 
-  //paddle left collsion
-  if (bX <= -49.5 + (bSize/4) && bY >= py - 50 && bY <= py + pSize && !bounce) {
-    bAngle += 180 - ((bY - py + 50 - 8.5) / 75 * 360);
-    bX = -49 + bSize/4;
-    bouncer();
-    bounce = true;
-    
-    if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-    }
-  } else if (bX <= -55 - bSize/2) {
-    reset();
-    score("p1");
-    if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-      score("p1");
-    }
-  }
 
-  //paddle right collision
-  if (bX >= 49.5 - (bSize/4) && bY >= py2 - 50&& bY <= py2 + pSize&& !bounce) {
-    bAngle += 180 - ((bY - py2 + 50 - 8.5) / 75 * 360);
-    bX = 49 - bSize/4;
-    bouncer();
-    bounce = true;
-    if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-    }
-  } else if (bX >= 55 - bSize/2) {
-    reset();
-    score();
-    if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-      score();
-    }
-
-    }
-  }
 
 
 //bot for singelplayer
@@ -197,6 +145,64 @@ function bot() {
   }
   enemy.style.marginTop = py2 + "vh";
 }
+
+// Collision...
+function collision() {
+  var d = [
+    bY,
+    bX,
+    bSize,
+    pSize,
+    py,
+    py2
+  ];
+  collisionWorker.postMessage(d);
+}
+
+collisionWorker.onmessage = function (e) {
+  console.log("message " + e.data);
+  if (e.data.includes("1")) {
+    bAngle *= -1;
+    bY = 47 - bSize / 4;
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
+  } else if (e.data.includes("2")) {
+    bAngle *= -1;
+    bY = -47 + bSize / 4;
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
+  } else if (e.data.includes("3")) {
+    reset();
+    score("p1");
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      score("p1");
+    }
+  } else if (e.data.includes("4")) {
+    reset();
+    score();
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      score();
+    }
+  } else if (e.data.includes("5")) {
+    bAngle += 180 - ((bY - py + 50 - 8.5) / 75 * 360);
+    bX = -49 + bSize / 4;
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
+
+  } else {
+
+    bAngle += 180 - ((bY - py2 + 50 - 8.5) / 75 * 360);
+    bX = 49 - bSize / 4;
+    if (host) {
+      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+    }
+  }
+};
 
 
 
@@ -393,12 +399,6 @@ function AngleToRadians(angle) {
   return angle / 180* Math.PI;
 }
 
-function bouncer() {
-  setTimeout(function(){ 
-    bounce = false;
-    }, 750);
-}
-
 function paus() {
   if (!pausTime) {
     pausTime = true;
@@ -511,6 +511,7 @@ function circleAni(x) {
 }
 
 
+
 function fullReset() {
   p1 = 0;
   p2 = 0;
@@ -618,7 +619,6 @@ function initialize() {
     cookies = false;
     cookiequest.style.display = "block";
   }
-
   initializeRTC();
   mainloop();
 }
