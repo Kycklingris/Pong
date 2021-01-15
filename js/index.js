@@ -16,6 +16,7 @@ const sliders = document.querySelectorAll(".slider");
 const values = document.querySelectorAll(".value");
 const cookiequest = document.querySelector("#cookies");
 const gurka = document.querySelector("#gurka");
+const joinButt = document.querySelector("#submit");
 
 const circle = document.querySelector("#circle");
 const smokel = document.querySelector("#smokel");
@@ -51,7 +52,9 @@ var popup = true,
   cookies = false,
   pausTime = false,
   pausTimeout = null,
-  maxAngle = null;
+  maxAngle = null,
+  joinInterval = null,
+  Id = null;
 
 
 var pc = null;
@@ -146,7 +149,7 @@ function bot() {
   enemy.style.marginTop = py2 + "vh";
 }
 
-// Collision...
+//Send to collisionworker
 function collision() {
   var d = [
     bY,
@@ -159,6 +162,7 @@ function collision() {
   collisionWorker.postMessage(d);
 }
 
+//Webworker message handling
 collisionWorker.onmessage = function (e) {
   console.log("message " + e.data);
   if (e.data.includes("1")) {
@@ -178,7 +182,6 @@ collisionWorker.onmessage = function (e) {
     score("p1");
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-      score("p1");
     }
   } else if (e.data.includes("4")) {
     reset();
@@ -188,7 +191,7 @@ collisionWorker.onmessage = function (e) {
       score();
     }
   } else if (e.data.includes("5")) {
-    bAngle += 180 - ((bY - py + 50 - 8.5) / 75 * 360);
+    bAngle += 180 + ((bY - py + 50 - 8.5) / maxAngle * 360);
     bX = -49 + bSize / 4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
@@ -196,13 +199,14 @@ collisionWorker.onmessage = function (e) {
 
   } else {
 
-    bAngle += 180 - ((bY - py2 + 50 - 8.5) / 75 * 360);
+    bAngle += 180 + ((bY - py2 + 50 - 8.5) / maxAngle * 360);
     bX = 49 - bSize / 4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
   }
 };
+
 
 
 
@@ -234,13 +238,7 @@ function initializeRTC() {
 
       dc = c;
       console.log("Connected to: " + dc.peer);
-    var msg = document.createElement("p");
-      var text = document.createTextNode("Connected");
-      msg.appendChild(text);
-      messages.appendChild(msg);
-      messages.scrollTo(0, document.body.scrollHeight);
-    startButton.style.display = "block";
-    data();
+      data();
   });
 
   pc.on("disconnected", function () {
@@ -249,8 +247,9 @@ function initializeRTC() {
       var text = document.createTextNode("Connection lost. Please reconnect");
       msg.appendChild(text);
       messages.appendChild(msg);
-      messages.scrollTo(0, document.body.scrollHeight);
+    messages.scrollTo(0, document.body.scrollHeight);
     console.log('Connection lost. Please Reconnect');
+    fullReset();
 
     pc.id = lastpeerid;
     pc._lastServerId = lastpeerid;
@@ -266,35 +265,28 @@ function initializeRTC() {
       messages.appendChild(msg);
       messages.scrollTo(0, document.body.scrollHeight);
   });
-
-  getId();
 }
 
 function getId() {
+  joinButt.disabled = false;
   textfield.value = pc.id;
   textfield.select();
   textfield.setSelectionRange(0, 99999);
   document.execCommand("copy");
 }
 
-function join() {
-
-  if (dc) {
+function join(x) {
+  joinButt.disabled = true;
+  if (dc && x) {
     dc.close();
+    clearInterval(joinInterval);
   }
 
-  dc = pc.connect(textfield.value, {
-    reliable: true
-  });
-
-  dc.on('open', function () {
-    var msg = document.createElement("p");
-      var text = document.createTextNode("Connected");
-      msg.appendChild(text);
-      messages.appendChild(msg);
-      messages.scrollTo(0, document.body.scrollHeight);     
-    startButton.style.display = "block";
-  });
+  if (!dc) {
+    Id = textfield.value;
+    joinInterval = setInterval(tryJoin, 1500);
+    return;
+  }
 
   dc.on('close', function () {
     var msg = document.createElement("p");
@@ -302,9 +294,37 @@ function join() {
       msg.appendChild(text);
       messages.appendChild(msg);
       messages.scrollTo(0, document.body.scrollHeight);
+      startButton.style.display = "none";
   });
-  
   data();
+}
+
+function tryJoin() {
+  var msg = document.createElement("p");
+  var text = document.createTextNode("Retrying...");
+  msg.appendChild(text);
+  messages.appendChild(msg);
+  messages.scrollTo(0, document.body.scrollHeight);     
+  
+  dc = pc.connect(Id, {
+    reliable: true
+  });
+
+  dc.on('open', function () {
+    clearInterval(joinInterval);
+    join();
+    setTimeout(function(){ 
+      dc.send("accept");
+    }, 500);
+    var msg = document.createElement("p");
+    var text = document.createTextNode("Connected");
+    msg.appendChild(text);
+    messages.appendChild(msg);
+    messages.scrollTo(0, document.body.scrollHeight);     
+    startButton.style.display = "block";
+    return;
+  });
+
 }
 
 function send() {
@@ -330,37 +350,39 @@ function online() {
 function start() {
   dc.send("start");
   host = true;
-  hide();
   onlineplay = true;
+  fullReset();
+  paus();
 }
 
 function start2() {
   host = false;
-  bAngle -= 180;
-  hide();
   onlineplay = true;
-  
+  fullReset();
 }
 
 function data() {
+  var tmp = null;
   dc.on('data', function (e) {
     if (e.includes("pong: ")) {
-      var tmp = e.split(" ");
+      tmp = e.split(" ");
       py2 = 83 - Number(tmp[1]);
     } else if (e.includes("boll: ")) {
-      var tmp2 = e.split(" ");
-      bAngle = Number(tmp2[1]) - 180;
-      bX = 0 - Number(tmp2[2]);
-      bY = 0 - Number(tmp2[3]);
+      tmp = e.split(" ");
+      bAngle = Number(tmp[1]) - 180;
+      bX = 0 - Number(tmp[2]);
+      bY = 0 - Number(tmp[3]);
 
     } else if (e.includes("scorem")) {
-      score("p1");
-
+      tmp = e.split(" ");
+      p2 = tmp[1];
+      score2.innerHTML = p2;
     } else if (e.includes("scoreu")) {
-      score();
-
+      tmp = e.split(" ");
+      p1 = tmp[1];
+      score1.innerHTML = p1;
     } else if (e.includes("paus")) {
-      paus();
+      paus(true);
     } else if (e.includes("Other: ")) {
       var msg = document.createElement("p");
       var text = document.createTextNode(e);
@@ -370,6 +392,27 @@ function data() {
     } else if (e.includes("start")) {
       start2();
 
+    } else if (e.includes("reset")) { //  dc.send("reset " + settings[0] + " " + settings[1] + " " + settings[2] + " " + settings[3] + " " + settings[4] + " " + settings[5] + " " + bAngle);
+      tmp = e.split(" ");
+      settings[0] = tmp[1];
+      settings[1] = tmp[2];
+      settings[2] = tmp[3];
+      settings[3] = tmp[4];
+      settings[4] = tmp[5];
+      settings[5] = tmp[6];
+      bAngle = tmp[7];
+      load();
+    } else if (e.includes("win")) {
+      
+    } else if (e.includes("accept")) {
+      var h = document.createElement("p");
+      var j = document.createTextNode("Connected");
+      h.appendChild(j);
+      messages.appendChild(h);
+      messages.scrollTo(0, document.body.scrollHeight);
+      startButton.style.display = "block";
+    } else if (e.includes("")) {
+      
     }
   });
   
@@ -380,7 +423,6 @@ function data() {
 
 //Show/Hide P2P popup
 function hide() {
-  if (!onlineplay) {
     if (document.querySelector("#popup").style.display == "none") {
       document.querySelector("#popup").style.display = "block";
       document.querySelector("#settings").style.display = "block";
@@ -391,51 +433,51 @@ function hide() {
       document.querySelector("#wiper").style.display = "none";
     }
     startButton.style.display = "none";
-  }
-
 }
 
 function AngleToRadians(angle) {
   return angle / 180* Math.PI;
 }
 
-function paus() {
-  if (!pausTime) {
-    pausTime = true;
-    if (host) {
-      dc.send("paus");
-    } else {
+function paus(x) {
+    if (!pausTime) {
+      pausTime = true;
+      if (!x && onlineplay) {
+        dc.send("paus");
+      }
       hide();
-    }
   
-    if (!paused) {
-      paused = true;
-      pausTime = false;
-    } else {
-      pausTimeout = setTimeout(function () {
-        paused = false;
+      if (!paused) {
+        paused = true;
         pausTime = false;
-      }, 1000);
+      } else {
+        pausTimeout = setTimeout(function () {
+          paused = false;
+          pausTime = false;
+        }, 1000);
     
+      }
     }
   } 
 
-}
-
-
 function score(x) {
   if (x == "p1") {
-    p1++;
-    score1.innerHTML = p1;
-
     if (host) {
-      dc.send("scorem");
+      p1++;
+      score1.innerHTML = p1;
+      dc.send("scorem " + p1);
+    } else if (!onlineplay){
+      p1++;
+      score1.innerHTML = p1;
     }
   } else {
-    p2++;
-    score2.innerHTML = p2;
     if (host) {
-      dc.send("scorem");
+      p2++;
+      score2.innerHTML = p2;
+      dc.send("scoreu " + p2);
+    } else if (!onlineplay){
+      p2++;
+      score2.innerHTML = p2;
     }
   }
 }
@@ -447,9 +489,7 @@ function save() {
   settings[3] = Number((sliders[3].value - 100)/100 * 17);
   settings[4] = Number((sliders[4].value - 100)/100 * 0.04);
   settings[5] = Number(sliders[5].value);
-  if (host) {
-    dc.send("set: " + bSpeed + " " + bSize + " " + bAngle + " " + pSize + " " + speed + " " + win);
-  }
+
   if (cookies) {
     saveCookie();
   }
@@ -519,7 +559,16 @@ function fullReset() {
   score2.innerHTML = p2;
 
   bAngle = Math.random(0, 360);
+
+  if (onlineplay && !host) {
+    bAngle = bAngle - 180;
+  }
+
   load();
+
+  if (host) {
+    dc.send("reset " + settings[0] + " " + settings[1] + " " + settings[2] + " " + settings[3] + " " + settings[4] + " " + settings[5] + " " + bAngle);
+  }
   reset();
 }
 
@@ -619,6 +668,9 @@ function initialize() {
     cookies = false;
     cookiequest.style.display = "block";
   }
+  bAngle = Math.random(0, 360);
+
+
   initializeRTC();
   mainloop();
 }
