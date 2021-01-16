@@ -93,6 +93,18 @@ body {
 
 }
 
+#winText {
+    display:none;
+    left:50vw;
+    top:50vh;
+    width:50vw;
+    text-align: center;
+    transform:translate(-50%, -50%);
+
+    z-index:50;
+    color:rgb(164, 29, 191);
+    font-size:30vh;
+}
 
 
 

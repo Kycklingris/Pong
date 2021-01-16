@@ -17,6 +17,7 @@ const values = document.querySelectorAll(".value");
 const cookiequest = document.querySelector("#cookies");
 const gurka = document.querySelector("#gurka");
 const joinButt = document.querySelector("#submit");
+const winText = document.querySelector("#winText");
 
 const circle = document.querySelector("#circle");
 const smokel = document.querySelector("#smokel");
@@ -61,10 +62,10 @@ var pc = null;
 var dc = null;
 var lastpeerid = null;
 
-function mainloop() {
+function mainloop(now) {
+  delta = now - prev;
+  prev = now;
 
-
-    deltatimer();
   if (!paused) {
     if (!onlineplay) {
       pmove();
@@ -83,16 +84,9 @@ function mainloop() {
     }
 
   }
-
-  requestAnimationFrame(mainloop);
+    requestAnimationFrame(mainloop);
 }
 
-// Time between frames
-function deltatimer() {
-  let e = Date.now();
-  delta = e - prev;
-  prev = e;
-}
 
 region.onmousemove = function cursor(e) {
   var y = e.clientY;
@@ -130,7 +124,26 @@ function bmove() {
   gurka.style.transition = "all 1.5s";
 }
 
+function winCheck() {
+  if (p1 >= win) {
+    fullReset();
+    paus();
+    displayWinText("Player 1 Wins!");
 
+  } else if (p2 >= win) {
+    fullReset();
+    paus();
+    displayWinText("Player 2 Wins!");
+  }
+}
+
+function displayWinText(e) {
+  winText.style.display = "block";
+  winText.innerHTML = e;
+  setTimeout(function () {
+    winText.style.display = "none";
+  }, 1500);
+}
 
 
 //bot for singelplayer
@@ -162,7 +175,7 @@ function collision() {
   collisionWorker.postMessage(d);
 }
 
-//Webworker message handling
+//Collision Webworker message handling
 collisionWorker.onmessage = function (e) {
   console.log("message " + e.data);
   if (e.data.includes("1")) {
@@ -180,12 +193,14 @@ collisionWorker.onmessage = function (e) {
   } else if (e.data.includes("3")) {
     reset();
     score("p1");
+    winCheck();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("4")) {
     reset();
     score();
+    winCheck();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
       score();
@@ -524,6 +539,9 @@ function load() {
 
   ball.style.height = bSize + "vh";
   ball.style.width = bSize + "vh";
+
+  //region.style.height = 100 - pSize + "vh";
+  //region.style.marginTop = pSize/2 + "vh";
 }
 
 function reset() {
