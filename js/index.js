@@ -68,20 +68,18 @@ function mainloop(now) {
 
   if (!paused) {
     if (!onlineplay) {
-      pmove();
-      bmove();
-      collision();
       bot();
     }
     if (onlineplay) {
       online();
-      pmove();
-      collision();
-      bmove();
       if (host) {
         setInterval(dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY), 400);
       }
     }
+    winCheck();
+    collision();
+    pmove();
+    bmove();
 
   }
     requestAnimationFrame(mainloop);
@@ -91,7 +89,7 @@ function mainloop(now) {
 region.onmousemove = function cursor(e) {
   var y = e.clientY;
    ty = y / space.clientHeight;
-  ty = ty * 100 - 8.5;
+  ty = ty * 100 - pSize/2;
 
 };
 
@@ -134,6 +132,7 @@ function winCheck() {
     fullReset();
     paus();
     displayWinText("You lose!");
+
   }
 }
 
@@ -193,14 +192,12 @@ collisionWorker.onmessage = function (e) {
   } else if (e.data.includes("3")) {
     reset();
     score();
-    winCheck();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("4")) {
     reset();
     score("p1");
-    winCheck();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
