@@ -1,6 +1,6 @@
 /*jshint esversion: 9 */
 const generate = document.querySelector('#generate');
-const submit = document.getElementById('submit'); 
+const submit = document.getElementById('submit');
 const textfield = document.querySelector('#input');
 const ball = document.querySelector("#ball");
 const region = document.querySelector("#cursorcapture");
@@ -40,9 +40,11 @@ var popup = true,
   ty2 = 0,
   bX = 1,
   bY = 0,
-  bAngle = -180,
+  bAngle = 180,
   bSpeed = 0.045,
   bSize = 6,
+  bSpeedX = 0,
+  bSpeedY = 0,
   win = 5,
   paused = true,
   onlineplay = false,
@@ -56,7 +58,8 @@ var popup = true,
   maxAngle = null,
   joinInterval = null,
   Id = null,
-  pausLock = false;
+  pausLock = false,
+  movement = true;
 
 
 var pc = null;
@@ -80,7 +83,9 @@ function mainloop(now) {
     winCheck();
     collision();
     pmove();
-    bmove();
+    if (movement) {
+      bmove();
+    }
 
   }
     requestAnimationFrame(mainloop);
@@ -89,16 +94,16 @@ function mainloop(now) {
 
 region.onmousemove = function cursor(e) {
   var y = e.clientY;
-   ty = y / space.clientHeight;
-  ty = ty * 100 - pSize/2;
+   ty = y / region.clientHeight;
+  ty = ty * 100;
 
 };
 
 // Player Movement
-function pmove() { 
-  if (py-1 > ty && py > 0) {
+function pmove() {
+  if (py-1 > ty - pSize/2 && py > 0) {
     py -= speed * delta;
-  } else if (py+1 < ty && py < 100) {
+  } else if (py+1 < ty - pSize/2 && py < 100) {
     py += speed * delta;
   }
   if (py < 0) {
@@ -114,9 +119,8 @@ function pmove() {
 
 // Ball Movement
 function bmove() {
-  var angle = AngleToRadians(bAngle);
-  bX += bSpeed * Math.cos(angle) * delta;
-  bY += bSpeed * -Math.sin(angle) * delta;
+  bX += bSpeedX * delta;
+  bY += bSpeedY * delta;
   ball.style.marginTop = bY + "vh";
   ball.style.marginLeft = bX + "vw";
   gurka.style.transform = "rotate(" +  bAngle + "deg)";
@@ -176,41 +180,75 @@ function collision() {
 
 //Collision Webworker message handling
 collisionWorker.onmessage = function (e) {
+  var tmp = null;
+  var tmp2 = null;
+  var angle = null;
   console.log("message " + e.data);
-  if (e.data.includes("1")) {
-    bAngle *= -1;
+  if (e.data.includes("1")) {  // bottom
+    bSpeedY *= -1;
     bY = 47 - bSize / 4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
-  } else if (e.data.includes("2")) {
-    bAngle *= -1;
+  } else if (e.data.includes("2")) { // top
+    bSpeedY *= -1;
     bY = -47 + bSize / 4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+
     }
-  } else if (e.data.includes("3")) {
+
+  } else if (e.data.includes("3")) { // right score
     reset();
     score();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
-  } else if (e.data.includes("4")) {
+  } else if (e.data.includes("4")) { // left score
     reset();
     score("p1");
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
-  } else if (e.data.includes("5")) {
-    bAngle += 90;
+  } else if (e.data.includes("5")) { // left paddel
+    angle = Math.acos(bSpeedX / bSpeed) * 180 / Math.PI;
+    angle += maxAngle * (py - 50 + pSize / 2 - bY) / bSize / 2;
+    angle += 180;
+    if (angle >= 90 && angle <= 270) {
+      tmp = Math.abs(90 - angle);
+      tmp2 = Math.abs(270 - angle);
+      if (tmp < tmp2) {
+        angle = 88;
+      } else {
+        angle = 272;
+      }
+    }
+    tmp = AngleToRadians(angle)
+    bSpeedX = bSpeed * Math.cos(tmp);
+    bSpeedY = bSpeed * Math.sin(tmp);
+
     bX = -49 + bSize / 4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
 
-  } else {
+  } else {  // right paddel
+    angle = Math.acos(bSpeedX / bSpeed) * 180 / Math.PI;
+    angle += maxAngle * (py2 - 50 + pSize / 2 - bY) / bSize / 2;
+    angle += 180;
+    if (angle <= 90 || angle >= 270) {
+      tmp = Math.abs(90 - angle);
+      tmp2 = Math.abs(270 - angle);
+      if (tmp < tmp2) {
+        angle = 92;
+      } else {
+        angle = 268;
+      }
+    }
+    tmp = AngleToRadians(angle)
+    bSpeedX = bSpeed * Math.cos(tmp);
+    bSpeedY = bSpeed * Math.sin(tmp);
 
-    bAngle += 180 + ((bY - py2 + 50 - pSize/2) / maxAngle * 360);
     bX = 49 - bSize / 4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
@@ -294,8 +332,8 @@ function join(x) {
 }
 
 function tryJoin() {
-  chat("Retrying...");  
-  
+  chat("Retrying...");
+
   dc = pc.connect(Id, {
     reliable: true
   });
@@ -303,10 +341,10 @@ function tryJoin() {
   dc.on('open', function () {
     clearInterval(joinInterval);
     join();
-    setTimeout(function(){ 
+    setTimeout(function(){
     dc.send("accepted");
     }, 500);
-    chat("connected");  
+    chat("connected");
     startButton.style.display = "block";
     onlineplay = true;
     pausLock = true;
@@ -410,7 +448,7 @@ function data() {
     } else if (e.includes("Already connected to another client")) {
       chat("Fuck off I'm already playing with someone else!");
 
-      
+
     }else if (e.includes("accepted")) {
       console.log("Connected to: " + dc.peer);
       chat("Connected");
@@ -418,10 +456,10 @@ function data() {
       onlineplay = true;
       pausLock = true;
     }else if (e.includes("")) {
-      
+
     }
   });
-  
+
 }
 
 
@@ -434,8 +472,14 @@ function chat(x) {
   messages.appendChild(msg);
   messages.scrollTo(0, document.body.scrollHeight);
 }
+
+
+
 function AngleToRadians(angle) {
   return angle / 180* Math.PI;
+}
+function getRndInteger(min, max) { // kopierad
+  return Math.floor(Math.random() * (max - min + 1) ) + min;
 }
 
 // Show/Hide settings
@@ -458,7 +502,7 @@ function paus(x) {
         dc.send("paus");
       }
       hide();
-  
+
       if (!paused) {
         paused = true;
         pausTime = false;
@@ -467,10 +511,10 @@ function paus(x) {
           paused = false;
           pausTime = false;
         }, 1000);
-    
+
       }
     }
-  } 
+  }
 
 function score(x) {
   if (x == "p1") {
@@ -504,15 +548,15 @@ function save() {
     } else if (sliders[i].value > 0) {
       settings[i] = ogSettings[i] * Math.abs(Number(sliders[i].value));
     } else {
-      settings[i] = ogSettings[i]; 
-    } 
+      settings[i] = ogSettings[i];
+    }
   }
   console.log(settings);
 
   if (cookies) {
     saveCookie();
   }
-  
+
   if (onlineplay) {
     dc.send("reset " + settings[0] + " " + settings[1] + " " + settings[2] + " " + settings[3] + " " + settings[4] + " " + settings[5] + " " + bAngle);
   }
@@ -563,17 +607,21 @@ function load() {
       values[i].innerHTML = sliders[i].value;
     }
   }
+
+  var angle = AngleToRadians(bAngle);
+  bSpeedX = bSpeed*  Math.cos(angle);
+  bSpeedY = bSpeed * -Math.sin(angle);
 }
 
 function reset() {
   bX = 0;
   bY = 0;
-  bSpeed = 0;
   circleAni(true);
- 
-  setTimeout(function(){ 
-    bSpeed = settings[0];
-    
+  movement = false;
+
+  setTimeout(function () {
+    movement = true;
+
     circleAni(false);
     }, 1500);
 
@@ -597,11 +645,15 @@ function fullReset() {
   score1.innerHTML = p1;
   score2.innerHTML = p2;
 
-  bAngle = Math.random(0, 360);
+  bAngle = getRndInteger(0,360);
+
 
   if (onlineplay && !host) {
     bAngle = bAngle - 180;
   }
+  var angle = AngleToRadians(bAngle);
+  bSpeedX = bSpeed*  Math.cos(angle);
+  bSpeedY = bSpeed * -Math.sin(angle);
 
   load();
   reset();
@@ -610,25 +662,25 @@ function fullReset() {
 function resetVal(x) {
   if (x == 6) {
     sliders[x - 1].value = 5;
-    values[x - 1].innerHTML = sliders[x - 1].value; 
-    
+    values[x - 1].innerHTML = sliders[x - 1].value;
+
   } else if( x == 5){
     sliders[x - 1].value = 0;
-    values[x-1].innerHTML = sliders[x-1].value; 
+    values[x-1].innerHTML = sliders[x-1].value;
   } else if( x == 4){
     sliders[x - 1].value = 0;
-    values[x-1].innerHTML = sliders[x-1].value; 
+    values[x-1].innerHTML = sliders[x-1].value;
   } else if( x == 3){
     sliders[x - 1].value = 50;
-    values[x-1].innerHTML = sliders[x-1].value; 
+    values[x-1].innerHTML = sliders[x-1].value;
   } else if( x == 2){
     sliders[x - 1].value = 0;
-    values[x-1].innerHTML = sliders[x-1].value; 
+    values[x-1].innerHTML = sliders[x-1].value;
   } else if( x == 1){
     sliders[x - 1].value = 0;
-    values[x-1].innerHTML = sliders[x-1].value; 
+    values[x-1].innerHTML = sliders[x-1].value;
   }
-  
+
 }
 
 sliders[0].oninput = function () {
@@ -671,23 +723,23 @@ document.addEventListener("keyup", function(event) {
     event.preventDefault();
     if (!pausLock) {
       paus();
-    } 
+    }
   }
 });
 space.addEventListener("click", function (event) {
 if (!pausLock) {
       paus();
-    } 
+    }
 });
 region.addEventListener("click", function (event) {
   if (!pausLock) {
       paus();
-    } 
+    }
 });
 wiper.addEventListener("click", function (event) {
   if (!pausLock) {
       paus();
-    } 
+    }
 });
 
 
@@ -706,7 +758,9 @@ function initialize() {
     cookies = false;
     cookiequest.style.display = "block";
   }
-  bAngle = Math.random(0, 360);
+  var angle = AngleToRadians(bAngle);
+  bSpeedX = bSpeed*  Math.cos(angle);
+  bSpeedY = bSpeed * -Math.sin(angle);
 
 
   initializeRTC();
