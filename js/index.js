@@ -128,12 +128,12 @@ function winCheck() {
   if (p1 >= win) {
     fullReset();
     paus();
-    displayWinText("Player 1 Wins!");
+    displayWinText("You win!");
 
   } else if (p2 >= win) {
     fullReset();
     paus();
-    displayWinText("Player 2 Wins!");
+    displayWinText("You lose!");
   }
 }
 
@@ -192,18 +192,17 @@ collisionWorker.onmessage = function (e) {
     }
   } else if (e.data.includes("3")) {
     reset();
-    score("p1");
+    score();
     winCheck();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("4")) {
     reset();
-    score();
+    score("p1");
     winCheck();
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
-      score();
     }
   } else if (e.data.includes("5")) {
     bAngle += 180 + ((bY - py + 50 - 8.5) / maxAngle * 360);
@@ -508,6 +507,10 @@ function save() {
   if (cookies) {
     saveCookie();
   }
+  
+  if (onlineplay) {
+    dc.send("reset " + settings[0] + " " + settings[1] + " " + settings[2] + " " + settings[3] + " " + settings[4] + " " + settings[5] + " " + bAngle);
+  }
   fullReset();
 }
 
@@ -540,8 +543,6 @@ function load() {
   ball.style.height = bSize + "vh";
   ball.style.width = bSize + "vh";
 
-  //region.style.height = 100 - pSize + "vh";
-  //region.style.marginTop = pSize/2 + "vh";
 }
 
 function reset() {
@@ -583,10 +584,6 @@ function fullReset() {
   }
 
   load();
-
-  if (host) {
-    dc.send("reset " + settings[0] + " " + settings[1] + " " + settings[2] + " " + settings[3] + " " + settings[4] + " " + settings[5] + " " + bAngle);
-  }
   reset();
 }
 
