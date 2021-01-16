@@ -202,7 +202,7 @@ collisionWorker.onmessage = function (e) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("5")) {
-    bAngle += 180 + ((bY - py + 50 - 8.5) / maxAngle * 360);
+    bAngle += 90;
     bX = -49 + bSize / 4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
@@ -210,7 +210,7 @@ collisionWorker.onmessage = function (e) {
 
   } else {
 
-    bAngle += 180 + ((bY - py2 + 50 - 8.5) / maxAngle * 360);
+    bAngle += 180 + ((bY - py2 + 50 - pSize/2) / maxAngle * 360);
     bX = 49 - bSize / 4;
     if (host) {
       dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
@@ -236,19 +236,17 @@ function initializeRTC() {
     console.log('ID: ' + pc.id);
   });
 
-  pc.on('connection', function (c) {  // kopierat
+  pc.on('connection', function (c) {
       // Allow only a single connection
-      if (dc && dc.open) {
+      if (dc && dc.open) {    // kopierat
           c.on('open', function() {
               c.send("Already connected to another client");
               setTimeout(function() { c.close(); }, 500);
           });
           return;
       }
-
-      dc = c;
-      console.log("Connected to: " + dc.peer);
-      data();
+    dc = c;
+    data();
   });
 
   pc.on("disconnected", function () {  // kopierat men ändrat vart den skickar det.
@@ -288,15 +286,10 @@ function join(x) {
 
   if (!dc) {
     Id = textfield.value;
-    joinInterval = setInterval(tryJoin, 1500);
+    joinInterval = setInterval(tryJoin, 2000);
     return;
   }
 
-  dc.on('close', function () {
-    chat("Connection closed");
-    startButton.style.display = "none";
-    joinButt.disabled = false;
-  });
   data();
 }
 
@@ -311,7 +304,7 @@ function tryJoin() {
     clearInterval(joinInterval);
     join();
     setTimeout(function(){ 
-    dc.send("accept");
+    dc.send("accepted");
     }, 500);
     chat("connected");  
     startButton.style.display = "block";
@@ -319,6 +312,10 @@ function tryJoin() {
     pausLock = true;
     return;
   });
+  dc.on('close', function () {
+      chat("Disconnected");
+      resetRTC();
+    });
 
 }
 
@@ -336,21 +333,16 @@ function send() {
   }
 }
 
-function joined() {
-  dc.on('close', function () {
-    chat("Connection closed");
-    startButton.style.display = "none";
-    joinButt.disabled = false;
-  });
-
-  chat("Connected");
-  startButton.style.display = "block";
-  onlineplay = true;
-  pausLock = true;
-}
-
 function resetRTC() {
-
+  if (pc) {
+    pc.destroy();
+  }
+  joinButt.disabled = false;
+  startButton.style.display = "none";
+  fullReset();
+  initializeRTC();
+  onlineplay = false;
+  host = null;
 }
 
 
@@ -380,7 +372,7 @@ function data() {
   dc.on('data', function (e) {
     if (e.includes("pong: ")) {
       tmp = e.split(" ");
-      py2 = 83 - Number(tmp[1]);                // kanske fel
+      py2 = 100 - pSize - Number(tmp[1]);                // kanske fel
     } else if (e.includes("boll: ")) {
       tmp = e.split(" ");
       bAngle = Number(tmp[1]) - 180;
@@ -391,10 +383,12 @@ function data() {
       tmp = e.split(" ");
       p2 = tmp[1];
       score2.innerHTML = p2;
+      reset();
     } else if (e.includes("scoreu")) {
       tmp = e.split(" ");
       p1 = tmp[1];
       score1.innerHTML = p1;
+      reset();
     } else if (e.includes("paus")) {
       paus(true);
     } else if (e.includes("Other: ")) {
@@ -413,10 +407,17 @@ function data() {
       bAngle = tmp[7];
       load();
       fullReset();
-    } else if (e.includes("accept")) {
-      joined();
     } else if (e.includes("Already connected to another client")) {
       chat("Fuck off I'm already playing with someone else!");
+
+      
+    }else if (e.includes("accepted")) {
+      console.log("Connected to: " + dc.peer);
+      chat("Connected");
+      startButton.style.display = "block";
+      onlineplay = true;
+      pausLock = true;
+    }else if (e.includes("")) {
       
     }
   });
