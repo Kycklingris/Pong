@@ -25,7 +25,7 @@ const smoker = document.querySelector("#smoker");
 const dustl = document.querySelector("#dustl");
 const dustr = document.querySelector("#dustr");
 
-
+const ogSettings = [0.045, 6, 75, 17, 0.04, 5];
 var settings = [0.045, 6, 75, 17, 0.04, 5];
 
 var collisionWorker = new Worker('js/collision.js');
@@ -55,7 +55,8 @@ var popup = true,
   pausTimeout = null,
   maxAngle = null,
   joinInterval = null,
-  Id = null;
+  Id = null,
+  pausLock = false;
 
 
 var pc = null;
@@ -94,10 +95,10 @@ region.onmousemove = function cursor(e) {
 };
 
 // Player Movement
-function pmove() {
-  if (py-2 > ty && py > 0) {
+function pmove() { 
+  if (py-1 > ty && py > 0) {
     py -= speed * delta;
-  } else if (py+2 < ty && py < 100) {
+  } else if (py+1 < ty && py < 100) {
     py += speed * delta;
   }
   if (py < 0) {
@@ -125,14 +126,13 @@ function bmove() {
 function winCheck() {
   if (p1 >= win) {
     fullReset();
-    paus();
     displayWinText("You win!");
+    paus(true);
 
   } else if (p2 >= win) {
     fullReset();
-    paus();
     displayWinText("You lose!");
-
+    paus(true);
   }
 }
 
@@ -147,7 +147,7 @@ function displayWinText(e) {
 
 //bot for singelplayer
 function bot() {
-  var Y = bY + 50 - 8.5;
+  var Y = bY + 50 - pSize/2;
   if (py2-0.5 > Y && py2 > 0) {
     py2 -= speed * delta;
   } else if (py2+0.5 < Y && py2 < 100) {
@@ -221,13 +221,12 @@ collisionWorker.onmessage = function (e) {
 
 
 
-//Peerjs start, lite med peerjs är kopierat, följde typ bara quick start, lite svårt att säga exakt vad dock.
 function initializeRTC() {
   pc = new Peer(null, {
     debug: 2
   });
 
-  pc.on('open', function (id) {
+  pc.on('open', function () {  // kopierat
     if (pc.id === null) {
       console.log('Recieved null id from peer open');
       pc.id = lastpeerid;
@@ -237,7 +236,7 @@ function initializeRTC() {
     console.log('ID: ' + pc.id);
   });
 
-  pc.on('connection', function (c) {
+  pc.on('connection', function (c) {  // kopierat
       // Allow only a single connection
       if (dc && dc.open) {
           c.on('open', function() {
@@ -252,14 +251,10 @@ function initializeRTC() {
       data();
   });
 
-  pc.on("disconnected", function () {
-    paused = true;
-    var msg = document.createElement("p");
-      var text = document.createTextNode("Connection lost. Please reconnect");
-      msg.appendChild(text);
-      messages.appendChild(msg);
-    messages.scrollTo(0, document.body.scrollHeight);
-    console.log('Connection lost. Please Reconnect');
+  pc.on("disconnected", function () {  // kopierat men ändrat vart den skickar det.
+    paus();
+    chat("Connection to server lost, reconnecting");
+    console.log('Connection to server lost, reconnecting');
     fullReset();
 
     pc.id = lastpeerid;
@@ -268,13 +263,9 @@ function initializeRTC() {
 
   });
 
-  pc.on("error", function (err) {
+  pc.on("error", function (err) { // kopierat men ändrat vart den skickar det.
     console.log(err);
-    var msg = document.createElement("p");
-      var text = document.createTextNode("" + err);
-      msg.appendChild(text);
-      messages.appendChild(msg);
-      messages.scrollTo(0, document.body.scrollHeight);
+    chat("" + err);
   });
 }
 
@@ -290,6 +281,8 @@ function join(x) {
   joinButt.disabled = true;
   if (dc && x) {
     dc.close();
+  }
+  if (x) {
     clearInterval(joinInterval);
   }
 
@@ -300,22 +293,15 @@ function join(x) {
   }
 
   dc.on('close', function () {
-    var msg = document.createElement("p");
-      var text = document.createTextNode("Connection closed!");
-      msg.appendChild(text);
-      messages.appendChild(msg);
-      messages.scrollTo(0, document.body.scrollHeight);
-      startButton.style.display = "none";
+    chat("Connection closed");
+    startButton.style.display = "none";
+    joinButt.disabled = false;
   });
   data();
 }
 
 function tryJoin() {
-  var msg = document.createElement("p");
-  var text = document.createTextNode("Retrying...");
-  msg.appendChild(text);
-  messages.appendChild(msg);
-  messages.scrollTo(0, document.body.scrollHeight);     
+  chat("Retrying...");  
   
   dc = pc.connect(Id, {
     reliable: true
@@ -325,14 +311,12 @@ function tryJoin() {
     clearInterval(joinInterval);
     join();
     setTimeout(function(){ 
-      dc.send("accept");
+    dc.send("accept");
     }, 500);
-    var msg = document.createElement("p");
-    var text = document.createTextNode("Connected");
-    msg.appendChild(text);
-    messages.appendChild(msg);
-    messages.scrollTo(0, document.body.scrollHeight);     
+    chat("connected");  
     startButton.style.display = "block";
+    onlineplay = true;
+    pausLock = true;
     return;
   });
 
@@ -352,6 +336,23 @@ function send() {
   }
 }
 
+function joined() {
+  dc.on('close', function () {
+    chat("Connection closed");
+    startButton.style.display = "none";
+    joinButt.disabled = false;
+  });
+
+  chat("Connected");
+  startButton.style.display = "block";
+  onlineplay = true;
+  pausLock = true;
+}
+
+function resetRTC() {
+
+}
+
 
 function online() {
   enemy.style.marginTop = py2 + "vh";
@@ -361,15 +362,17 @@ function online() {
 function start() {
   dc.send("start");
   host = true;
-  onlineplay = true;
+  startButton.style.display = "none";
   fullReset();
   paus();
+  pausLock = false;
 }
 
 function start2() {
   host = false;
-  onlineplay = true;
+  startButton.style.display = "none";
   fullReset();
+  pausLock = false;
 }
 
 function data() {
@@ -377,7 +380,7 @@ function data() {
   dc.on('data', function (e) {
     if (e.includes("pong: ")) {
       tmp = e.split(" ");
-      py2 = 83 - Number(tmp[1]);
+      py2 = 83 - Number(tmp[1]);                // kanske fel
     } else if (e.includes("boll: ")) {
       tmp = e.split(" ");
       bAngle = Number(tmp[1]) - 180;
@@ -395,11 +398,7 @@ function data() {
     } else if (e.includes("paus")) {
       paus(true);
     } else if (e.includes("Other: ")) {
-      var msg = document.createElement("p");
-      var text = document.createTextNode(e);
-      msg.appendChild(text);
-      messages.appendChild(msg);
-      messages.scrollTo(0, document.body.scrollHeight);
+      chat(e);
     } else if (e.includes("start")) {
       start2();
 
@@ -413,16 +412,11 @@ function data() {
       settings[5] = tmp[6];
       bAngle = tmp[7];
       load();
-    } else if (e.includes("win")) {
-      
+      fullReset();
     } else if (e.includes("accept")) {
-      var h = document.createElement("p");
-      var j = document.createTextNode("Connected");
-      h.appendChild(j);
-      messages.appendChild(h);
-      messages.scrollTo(0, document.body.scrollHeight);
-      startButton.style.display = "block";
-    } else if (e.includes("")) {
+      joined();
+    } else if (e.includes("Already connected to another client")) {
+      chat("Fuck off I'm already playing with someone else!");
       
     }
   });
@@ -432,7 +426,18 @@ function data() {
 
 
 
-//Show/Hide P2P popup
+function chat(x) {
+  var msg = document.createElement("p");
+  var text = document.createTextNode(x);
+  msg.appendChild(text);
+  messages.appendChild(msg);
+  messages.scrollTo(0, document.body.scrollHeight);
+}
+function AngleToRadians(angle) {
+  return angle / 180* Math.PI;
+}
+
+// Show/Hide settings
 function hide() {
     if (document.querySelector("#popup").style.display == "none") {
       document.querySelector("#popup").style.display = "block";
@@ -443,11 +448,6 @@ function hide() {
       document.querySelector("#settings").style.display = "none";
       document.querySelector("#wiper").style.display = "none";
     }
-    startButton.style.display = "none";
-}
-
-function AngleToRadians(angle) {
-  return angle / 180* Math.PI;
 }
 
 function paus(x) {
@@ -494,12 +494,19 @@ function score(x) {
 }
 
 function save() {
-  settings[0] = Number((sliders[0].value - 100)/100 * 0.045);
-  settings[1] = Number((sliders[1].value - 100)/100 * 6);
-  settings[2] = Number((sliders[2].value - 100)/100 * 75);
-  settings[3] = Number((sliders[3].value - 100)/100 * 17);
-  settings[4] = Number((sliders[4].value - 100)/100 * 0.04);
-  settings[5] = Number(sliders[5].value);
+
+  for (var i = 0; i < sliders.length; i++) {
+    if (i == 2 || i == 5) {
+      settings[i] = Number(sliders[i].value);
+    } else if (sliders[i].value < 0) {
+      settings[i] = ogSettings[i] / Math.abs(Number(sliders[i].value));
+    } else if (sliders[i].value > 0) {
+      settings[i] = ogSettings[i] * Math.abs(Number(sliders[i].value));
+    } else {
+      settings[i] = ogSettings[i]; 
+    } 
+  }
+  console.log(settings);
 
   if (cookies) {
     saveCookie();
@@ -540,6 +547,21 @@ function load() {
   ball.style.height = bSize + "vh";
   ball.style.width = bSize + "vh";
 
+  for (var i = 0; i < sliders.length; i++) {
+    if (i == 2 || i == 5) {
+      sliders[i].value = settings[i];
+      values[i].innerHTML = sliders[i].value;
+    } else if (settings[i] < ogSettings[i]) {
+      sliders[i].value = -ogSettings[i]/settings[i];
+      values[i].innerHTML = sliders[i].value;
+    } else if (settings[i] > ogSettings[i]) {
+      sliders[i].value = settings[i]/ogSettings[i];
+      values[i].innerHTML = sliders[i].value;
+    } else {
+      sliders[i].value = 0;
+      values[i].innerHTML = sliders[i].value;
+    }
+  }
 }
 
 function reset() {
@@ -585,33 +607,46 @@ function fullReset() {
 }
 
 function resetVal(x) {
-  if (x < 6) {
-    sliders[x - 1].value = 200;
-    values[x-1].innerHTML = sliders[x-1].value -200; 
-  } else {
+  if (x == 6) {
     sliders[x - 1].value = 5;
     values[x - 1].innerHTML = sliders[x - 1].value; 
+    
+  } else if( x == 5){
+    sliders[x - 1].value = 0;
+    values[x-1].innerHTML = sliders[x-1].value; 
+  } else if( x == 4){
+    sliders[x - 1].value = 0;
+    values[x-1].innerHTML = sliders[x-1].value; 
+  } else if( x == 3){
+    sliders[x - 1].value = 50;
+    values[x-1].innerHTML = sliders[x-1].value; 
+  } else if( x == 2){
+    sliders[x - 1].value = 0;
+    values[x-1].innerHTML = sliders[x-1].value; 
+  } else if( x == 1){
+    sliders[x - 1].value = 0;
+    values[x-1].innerHTML = sliders[x-1].value; 
   }
   
 }
 
 sliders[0].oninput = function () {
-  values[0].innerHTML = sliders[0].value -200;
+  values[0].innerHTML = sliders[0].value;
 };
 sliders[1].oninput = function () {
-  values[1].innerHTML = sliders[1].value -200;
+  values[1].innerHTML = sliders[1].value;
 };
 sliders[2].oninput = function () {
-  values[2].innerHTML = sliders[2].value -200;
+  values[2].innerHTML = sliders[2].value;
 };
 sliders[3].oninput = function () {
-  values[3].innerHTML = sliders[3].value -200;
+  values[3].innerHTML = sliders[3].value;
 };
 sliders[4].oninput = function () {
-  values[4].innerHTML = sliders[4].value -200;
+  values[4].innerHTML = sliders[4].value;
 };
 sliders[4].oninput = function () {
-  values[4].innerHTML = sliders[4].value -200;
+  values[4].innerHTML = sliders[4].value;
 };
 sliders[5].oninput = function () {
   values[5].innerHTML = sliders[5].value;
@@ -628,21 +663,30 @@ messagefield.addEventListener("keyup", function(event) {
     document.querySelector("#msgbutt").click();
   }
 });
+
+
 document.addEventListener("keyup", function(event) {
   if (event.keyCode === 27) {
     event.preventDefault();
-    paus();
+    if (!pausLock) {
+      paus();
+    } 
   }
 });
-
 space.addEventListener("click", function (event) {
-  paus();
+if (!pausLock) {
+      paus();
+    } 
 });
 region.addEventListener("click", function (event) {
-  paus();
+  if (!pausLock) {
+      paus();
+    } 
 });
 wiper.addEventListener("click", function (event) {
-  paus();
+  if (!pausLock) {
+      paus();
+    } 
 });
 
 
@@ -655,25 +699,6 @@ function initialize() {
       var x3 = x2[i].split("=");
       var i2 = x3[0]-1;
       settings[i2] = Number(x3[1]);
-      if (i2 == 5) {
-        sliders[5].value = x3[1];
-        values[5].innerHTML = sliders[5].value;
-      } else if (i2 == 4) { 
-        sliders[4].value =  x3[1] / 0.04 * 100  + 100;
-        values[4].innerHTML = sliders[4].value-200;
-      } else if (i2 == 3) {
-        sliders[3].value = x3[1] / 17 * 100 + 100;
-        values[3].innerHTML = sliders[3].value-200;
-      } else if (i2 == 2) {
-        sliders[2].value = x3[1] / 75 * 100 + 100;
-        values[2].innerHTML = sliders[2].value-200;
-      } else if (i2 == 1) {
-        sliders[1].value = x3[1] / 6 * 100 + 100;
-        values[1].innerHTML = sliders[1].value-200;
-      } else if (i2 == 0) {
-        sliders[0].value = x3[1] / 0.045 * 100 + 100;
-        values[0].innerHTML = sliders[0].value-200;
-      }
     }
     load();
   } else {
