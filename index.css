@@ -360,3 +360,40 @@ body {
   }
 }
 
+#smokel{
+    display:none;
+    height:100vh;
+    background-color: transparent;
+    width:0;
+    z-index:2;
+    animation: smokelani linear 0.4s infinite;
+    box-shadow: 0 0 0 0 rgb(255, 255, 255);
+}
+#smoker{
+    display:none;
+    height:100vh;
+    background-color: transparent;
+    left:100vw;
+    z-index:2;
+    animation: smokelani linear 0.4s infinite;
+    box-shadow: 0 0 0 0 rgb(255, 255, 255);
+}
+
+@keyframes smokelani {
+    0% {
+        box-shadow: 0 0 0 0 rgb(255, 255, 255);
+        opacity:0;
+    }
+    50% {
+        box-shadow: 0 0 15px 0.15vw rgb(255, 255, 255);
+        opacity:1;
+    }
+
+    100% {
+        box-shadow: 0 0 50px 0.1vw rgb(255, 255, 255);
+        opacity:0;
+    }
+
+}
+
+

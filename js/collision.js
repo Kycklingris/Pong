@@ -13,7 +13,7 @@ function collision(bY, bX, bSize, pSize, py, py2) {
     if (bX <= -49.5 + (bSize / 4)) {
         if (bX <= -55 - bSize / 2) {
             postMessage("3");
-        } else if (Math.abs((py-50+ pSize/2 -bY) / bSize/2) <= 1 && !bounce) {
+        } else if (Math.abs((py-50+ (pSize/2) -bY) / (pSize/2 + bSize/2)) <= 1 && !bounce) {
             bouncer();
             bounce = true;
             postMessage("5");
@@ -22,7 +22,7 @@ function collision(bY, bX, bSize, pSize, py, py2) {
 
   //paddle right collision
     if (bX >= 49.5 - (bSize / 4)) {
-        if (Math.abs((py2-50+ pSize/2 -bY) / bSize/2) <= 1 && !bounce) {
+        if (Math.abs((py2-50+ (pSize/2) -bY) / (pSize/2 + bSize/2)) <= 1 && !bounce) {
         bouncer();
         bounce = true;
         postMessage("6");

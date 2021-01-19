@@ -77,7 +77,7 @@ function mainloop(now) {
     if (onlineplay) {
       online();
       if (host) {
-        setInterval(dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY), 400);
+        setInterval(dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY), 400);
       }
     }
     winCheck();
@@ -188,33 +188,35 @@ collisionWorker.onmessage = function (e) {
     bSpeedY *= -1;
     bY = 47 - bSize / 4;
     if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("2")) { // top
     bSpeedY *= -1;
     bY = -47 + bSize / 4;
     if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY);
 
     }
 
   } else if (e.data.includes("3")) { // right score
+    animations(3);
     reset();
     score();
     if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("4")) { // left score
+    animations(2);
     reset();
     score("p1");
     if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("5")) { // left paddel
     angle = Math.acos(bSpeedX / bSpeed) * 180 / Math.PI;
     angle += maxAngle * (py - 50 + pSize / 2 - bY) / bSize / 2;
     angle += 180;
-    if (angle >= 90 && angle <= 270) {
+    if (angle % 360 >= 90 && angle %  360 <= 270) {
       tmp = Math.abs(90 - angle);
       tmp2 = Math.abs(270 - angle);
       if (tmp < tmp2) {
@@ -223,20 +225,21 @@ collisionWorker.onmessage = function (e) {
         angle = 272;
       }
     }
-    tmp = AngleToRadians(angle)
+
+    tmp = AngleToRadians(angle);
     bSpeedX = bSpeed * Math.cos(tmp);
     bSpeedY = bSpeed * Math.sin(tmp);
 
     bX = -49 + bSize / 4;
     if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY);
     }
 
   } else {  // right paddel
     angle = Math.acos(bSpeedX / bSpeed) * 180 / Math.PI;
     angle += maxAngle * (py2 - 50 + pSize / 2 - bY) / bSize / 2;
     angle += 180;
-    if (angle <= 90 || angle >= 270) {
+    if (angle %  360 <= 90 || angle %  360 >= 270) {
       tmp = Math.abs(90 - angle);
       tmp2 = Math.abs(270 - angle);
       if (tmp < tmp2) {
@@ -245,13 +248,13 @@ collisionWorker.onmessage = function (e) {
         angle = 268;
       }
     }
-    tmp = AngleToRadians(angle)
+    tmp = AngleToRadians(angle);
     bSpeedX = bSpeed * Math.cos(tmp);
     bSpeedY = bSpeed * Math.sin(tmp);
 
     bX = 49 - bSize / 4;
     if (host) {
-      dc.send("boll: " + bAngle + ' ' + bX + ' ' + bY);
+      dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY);
     }
   }
 };
@@ -410,12 +413,13 @@ function data() {
   dc.on('data', function (e) {
     if (e.includes("pong: ")) {
       tmp = e.split(" ");
-      py2 = 100 - pSize - Number(tmp[1]);                // kanske fel
+      py2 = 100 - pSize - Number(tmp[1]);
     } else if (e.includes("boll: ")) {
       tmp = e.split(" ");
-      bAngle = Number(tmp[1]) - 180;
-      bX = 0 - Number(tmp[2]);
-      bY = 0 - Number(tmp[3]);
+      bSpeedX = Number(tmp[1]) * -1;
+      bSpeedY = Number(tmp[2]) * -1;
+      bX = 0 - Number(tmp[3]);
+      bY = 0 - Number(tmp[4]);
 
     } else if (e.includes("scorem")) {
       tmp = e.split(" ");
@@ -616,13 +620,12 @@ function load() {
 function reset() {
   bX = 0;
   bY = 0;
-  circleAni(true);
   movement = false;
+  animations(1);
+
 
   setTimeout(function () {
     movement = true;
-
-    circleAni(false);
     }, 1500);
 
 }
@@ -634,6 +637,57 @@ function circleAni(x) {
   } else {
     circle.style.display = "none";
     circle.style.webkitAnimationPlayState = "paused";
+  }
+}
+
+
+//const dustl = document.querySelector("#dustl");
+//const dustr = document.querySelector("#dustr");
+
+function smoke(x, y) {
+  if (x) {
+    if (y) {
+      smokel.style.display = "block";
+      smokel.style.webkitAnimationPlayState = "running";
+    } else {
+      smokel.style.webkitAnimationPlayState = "paused";
+      smokel.style.display = "none";
+    }
+  } else {
+    if (y) {
+      smoker.style.webkitAnimationPlayState = "running";
+      smoker.style.display = "block";
+    } else {
+      smoker.style.webkitAnimationPlayState = "paused";
+      smoker.style.display = "none";
+    }
+  }
+
+}
+
+function animations(x) {
+  if (x == 1) {
+    circleAni(true);
+    setTimeout(function () {
+    circleAni(false);
+    }, 1500);
+    
+  } else if (x == 2) {
+    smoke(true, true);
+    setTimeout(function () {
+      smoke(true,false);
+    }, 400);
+    
+  } else if (x == 3) {
+    smoke(false, true);
+    setTimeout(function () {
+      smoke(false, false);
+    }, 400);
+    
+  } else if (x == 4) {
+    setTimeout(function () {
+    }, 1500);
+    
   }
 }
 
@@ -761,7 +815,6 @@ function initialize() {
   var angle = AngleToRadians(bAngle);
   bSpeedX = bSpeed*  Math.cos(angle);
   bSpeedY = bSpeed * -Math.sin(angle);
-
 
   initializeRTC();
   mainloop();
