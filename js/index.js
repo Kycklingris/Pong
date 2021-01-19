@@ -22,8 +22,6 @@ const winText = document.querySelector("#winText");
 const circle = document.querySelector("#circle");
 const smokel = document.querySelector("#smokel");
 const smoker = document.querySelector("#smoker");
-const dustl = document.querySelector("#dustl");
-const dustr = document.querySelector("#dustr");
 
 const ogSettings = [0.045, 6, 75, 17, 0.04, 5];
 var settings = [0.045, 6, 75, 17, 0.04, 5];
@@ -59,7 +57,8 @@ var popup = true,
   joinInterval = null,
   Id = null,
   pausLock = false,
-  movement = true;
+  movement = true,
+  bollSnurr = 0;
 
 
 var pc = null;
@@ -123,8 +122,6 @@ function bmove() {
   bY += bSpeedY * delta;
   ball.style.marginTop = bY + "vh";
   ball.style.marginLeft = bX + "vw";
-  gurka.style.transform = "rotate(" +  bAngle + "deg)";
-  gurka.style.transition = "all 1.5s";
 }
 
 function winCheck() {
@@ -185,12 +182,20 @@ collisionWorker.onmessage = function (e) {
   var angle = null;
   console.log("message " + e.data);
   if (e.data.includes("1")) {  // bottom
+    bollSnurr += 360;
+    gurka.style.transform = "rotate(" +  bollSnurr + "deg)";
+    gurka.style.transition = "all 1.5s";
+    
     bSpeedY *= -1;
     bY = 47 - bSize / 4;
     if (host) {
       dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("2")) { // top
+    bollSnurr += 360;
+    gurka.style.transform = "rotate(" +  bollSnurr + "deg)";
+    gurka.style.transition = "all 1.5s";
+    
     bSpeedY *= -1;
     bY = -47 + bSize / 4;
     if (host) {
@@ -213,6 +218,10 @@ collisionWorker.onmessage = function (e) {
       dc.send("boll: " + bSpeedX + ' ' + bSpeedY + ' ' + bX + ' ' + bY);
     }
   } else if (e.data.includes("5")) { // left paddel
+    bollSnurr += 360;
+    gurka.style.transform = "rotate(" +  bollSnurr + "deg)";
+    gurka.style.transition = "all 1.5s";
+    
     angle = Math.acos(bSpeedX / bSpeed) * 180 / Math.PI;
     angle += maxAngle * (py - 50 + pSize / 2 - bY) / bSize / 2;
     angle += 180;
@@ -236,6 +245,11 @@ collisionWorker.onmessage = function (e) {
     }
 
   } else {  // right paddel
+    bollSnurr += 360;
+    gurka.style.transform = "rotate(" +  bollSnurr + "deg)";
+  gurka.style.transition = "all 1.5s";
+
+    
     angle = Math.acos(bSpeedX / bSpeed) * 180 / Math.PI;
     angle += maxAngle * (py2 - 50 + pSize / 2 - bY) / bSize / 2;
     angle += 180;
@@ -640,10 +654,6 @@ function circleAni(x) {
   }
 }
 
-
-//const dustl = document.querySelector("#dustl");
-//const dustr = document.querySelector("#dustr");
-
 function smoke(x, y) {
   if (x) {
     if (y) {
@@ -669,13 +679,13 @@ function animations(x) {
   if (x == 1) {
     circleAni(true);
     setTimeout(function () {
-    circleAni(false);
+      circleAni(false);
     }, 1500);
     
   } else if (x == 2) {
     smoke(true, true);
     setTimeout(function () {
-      smoke(true,false);
+      smoke(true, false);
     }, 400);
     
   } else if (x == 3) {
@@ -683,11 +693,7 @@ function animations(x) {
     setTimeout(function () {
       smoke(false, false);
     }, 400);
-    
-  } else if (x == 4) {
-    setTimeout(function () {
-    }, 1500);
-    
+
   }
 }
 
